@@ -18,6 +18,7 @@ module "standard" {
   vpc_intel_images            = var.vpc_landing_zone_images
   ssh_public_key              = var.ssh_public_key
   ssh_private_key             = var.ssh_private_key
+  user_data                   = local.user_data
   configure_dns_forwarder     = true
   configure_ntp_forwarder     = true
   configure_nfs_server        = true
@@ -33,72 +34,112 @@ module "standard" {
   enable_scc_wp               = var.enable_scc_wp
   ansible_vault_password      = var.ansible_vault_password
   vpc_subnet_cidrs            = var.vpc_subnet_cidrs
+  enable_atracker             = var.enable_atracker
+  enable_vpc_flow_logs        = var.enable_vpc_flow_logs
 }
 
 
 
-# ######################################################
-# # COS Service credentials
-# # Download HANA binaries and SAP Solution binaries
-# # from IBM Cloud Object Storage(COS) to Ansible host
-# # host NFS mount point
-# ######################################################
+######################################################
+# COS — Download SAP binaries to the Ansible host
+# NFS mount point via the bastion jump host.
+######################################################
 
-# locals {
-#   cos_service_credentials  = jsondecode(var.ibmcloud_cos_service_credentials)
-#   cos_apikey               = local.cos_service_credentials.apikey
-#   cos_resource_instance_id = local.cos_service_credentials.resource_instance_id
-# }
+locals {
+  cos_creds       = jsondecode(var.ibmcloud_cos_service_credentials)
+  cos_apikey      = local.cos_creds.apikey
+  cos_instance_id = local.cos_creds.resource_instance_id
+  # NFS client mount path is the landing directory for all downloads.
+  cos_download_dir = var.nfs_server_config.mount_path
 
-# locals {
+  ibmcloud_cos_hana_configuration = {
+    cos_apikey               = local.cos_apikey
+    cos_region               = var.ibmcloud_cos_configuration.cos_region
+    cos_resource_instance_id = local.cos_instance_id
+    cos_bucket_name          = var.ibmcloud_cos_configuration.cos_bucket_name
+    cos_dir_name             = var.ibmcloud_cos_configuration.cos_hana_software_path
+    download_dir_path        = local.cos_download_dir
+  }
 
-#   ibmcloud_cos_hana_configuration = {
-#     cos_apikey               = local.cos_apikey
-#     cos_region               = var.ibmcloud_cos_configuration.cos_region
-#     cos_resource_instance_id = local.cos_resource_instance_id
-#     cos_bucket_name          = var.ibmcloud_cos_configuration.cos_bucket_name
-#     cos_dir_name             = var.ibmcloud_cos_configuration.cos_hana_software_path
-#     download_dir_path        = local.powervs_network_services_config.nfs.nfs_client_path
-#   }
+  ibmcloud_cos_solution_configuration = {
+    cos_apikey               = local.cos_apikey
+    cos_region               = var.ibmcloud_cos_configuration.cos_region
+    cos_resource_instance_id = local.cos_instance_id
+    cos_bucket_name          = var.ibmcloud_cos_configuration.cos_bucket_name
+    cos_dir_name             = var.ibmcloud_cos_configuration.cos_solution_software_path
+    download_dir_path        = local.cos_download_dir
+  }
+}
 
-#   ibmcloud_cos_solution_configuration = {
-#     cos_apikey               = local.cos_apikey
-#     cos_region               = var.ibmcloud_cos_configuration.cos_region
-#     cos_resource_instance_id = local.cos_resource_instance_id
-#     cos_bucket_name          = var.ibmcloud_cos_configuration.cos_bucket_name
-#     cos_dir_name             = var.ibmcloud_cos_configuration.cos_solution_software_path
-#     download_dir_path        = local.powervs_network_services_config.nfs.nfs_client_path
-#   }
+module "ibmcloud_cos_download_hana_binaries" {
+  source     = "../../../modules/ibmcloud-cos"
+  depends_on = [module.standard]
 
-#   ibmcloud_cos_monitoring_configuration = {
-#     cos_apikey               = local.cos_apikey
-#     cos_region               = var.ibmcloud_cos_configuration.cos_region
-#     cos_resource_instance_id = local.cos_resource_instance_id
-#     cos_bucket_name          = var.ibmcloud_cos_configuration.cos_bucket_name
-#     cos_dir_name             = var.ibmcloud_cos_configuration.cos_monitoring_software_path
-#     download_dir_path        = local.powervs_network_services_config.nfs.nfs_client_path
-#   }
-# }
+  access_host_or_ip          = module.standard.access_host_or_ip
+  target_server_ip           = module.standard.ansible_host_or_ip
+  ssh_private_key            = var.ssh_private_key
+  ibmcloud_cos_configuration = local.ibmcloud_cos_hana_configuration
+}
 
-# module "ibmcloud_cos_download_hana_binaries" {
-#   source     = "../../../modules/ibmcloud-cos"
-#   depends_on = [module.standard]
+module "ibmcloud_cos_download_solution_binaries" {
+  source     = "../../../modules/ibmcloud-cos"
+  depends_on = [module.ibmcloud_cos_download_hana_binaries]
 
-#   access_host_or_ip          = module.standard.access_host_or_ip
-#   target_server_ip           = module.standard.ansible_host_or_ip
-#   ssh_private_key            = var.ssh_private_key
-#   ibmcloud_cos_configuration = local.ibmcloud_cos_hana_configuration
-# }
+  access_host_or_ip          = module.standard.access_host_or_ip
+  target_server_ip           = module.standard.ansible_host_or_ip
+  ssh_private_key            = var.ssh_private_key
+  ibmcloud_cos_configuration = local.ibmcloud_cos_solution_configuration
+}
 
-# module "ibmcloud_cos_download_netweaver_binaries" {
-#   source     = "../../../modules/ibmcloud-cos"
-#   depends_on = [module.ibmcloud_cos_download_hana_binaries]
 
-#   access_host_or_ip          = module.standard.access_host_or_ip
-#   target_server_ip           = module.standard.ansible_host_or_ip
-#   ssh_private_key            = var.ssh_private_key
-#   ibmcloud_cos_configuration = local.ibmcloud_cos_solution_configuration
-# }
+#######################################################
+# SAP HANA DB VSI
+#######################################################
+
+module "hana_db" {
+  source     = "../../../modules/vsi"
+  depends_on = [module.standard]
+
+  providers = { ibm.ibm-is = ibm.ibm-is }
+
+  name              = "${var.prefix}-hanadb"
+  profile           = var.vsi_hana_db_profile
+  image             = var.vsi_hana_db_image
+  vpc_id            = local.vpc_id
+  zone              = var.vpc_zone
+  resource_group_id = local.resource_group_id
+  subnet_id         = local.subnet_id
+  security_group_id = local.security_group_id
+  ssh_key_id        = local.ssh_key_id
+  user_data         = local.user_data
+  volume_map        = local.hana_volume_map
+  tags              = var.tags
+}
+
+#######################################################
+# SAP APP (NetWeaver) VSI
+#######################################################
+
+module "app" {
+  source     = "../../../modules/vsi"
+  depends_on = [module.standard]
+
+  providers = { ibm.ibm-is = ibm.ibm-is }
+
+  name              = "${var.prefix}-app"
+  profile           = var.vsi_app_profile
+  image             = var.vsi_app_image
+  vpc_id            = local.vpc_id
+  zone              = var.vpc_zone
+  resource_group_id = local.resource_group_id
+  subnet_id         = local.subnet_id
+  security_group_id = local.security_group_id
+  ssh_key_id        = local.ssh_key_id
+  user_data         = local.user_data
+  volume_map        = local.app_volume_map
+  tags              = var.tags
+}
+
 
 # locals {
 #   monitoring_instance = module.standard.monitoring_instance

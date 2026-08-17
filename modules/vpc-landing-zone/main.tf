@@ -4,28 +4,12 @@
 locals {
   external_access_ip = var.external_access_ip != null && var.external_access_ip != "" ? length(regexall("/", var.external_access_ip)) > 0 ? var.external_access_ip : "${var.external_access_ip}/32" : ""
 
-  # Generate user_data with SSH public key
-  generated_user_data = <<-EOT
-#cloud-config
-# vim: syntax=yaml
-write_files:
-- content: |
-    ${var.ssh_public_key}
-  path: /root/.ssh/authorized_keys
-  permissions: '0600'
-  owner: root:root
-runcmd:
-- sed -i 's/^PermitRootLogin no/PermitRootLogin yes/' /etc/ssh/sshd_config
-- systemctl restart sshd
-EOT
-
-
   override_json_string = templatefile("${path.module}/presets/slz-preset.json.tftpl",
     {
       external_access_ip           = local.external_access_ip,
       rhel_image                   = var.vpc_intel_images.rhel_image,
       network_services_vsi_profile = var.network_services_vsi_profile,
-      user_data                    = var.user_data != null ? replace(var.user_data, "\n", "\\n") : replace(local.generated_user_data, "\n", "\\n")
+      user_data                    = replace(var.user_data, "\n", "\\n")
       transit_gateway_global       = var.transit_gateway_global,
       enable_monitoring_host       = var.enable_monitoring_host,
       sles_image                   = var.vpc_intel_images.sles_image,

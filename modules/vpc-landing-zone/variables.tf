@@ -81,9 +81,8 @@ variable "network_services_vsi_profile" {
 }
 
 variable "user_data" {
-  description = "User data that automatically performs common configuration tasks or runs scripts. For more information, see https://cloud.ibm.com/docs/vpc?topic=vpc-user-data. For information on using the user_data variable, please refer: https://cloud.ibm.com/docs/secure-infrastructure-vpc?topic=secure-infrastructure-vpc-user-data"
+  description = "cloud-init user data passed to all landing zone VSIs (jump-box, network-services, monitoring). Must be a valid cloud-config YAML string. For more information, see https://cloud.ibm.com/docs/vpc?topic=vpc-user-data."
   type        = string
-  default     = null
 }
 
 #####################################################

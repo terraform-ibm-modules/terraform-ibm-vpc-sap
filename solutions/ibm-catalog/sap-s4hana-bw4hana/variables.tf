@@ -28,90 +28,114 @@ variable "external_access_ip" {
   type        = string
 }
 
-# #####################################################
-# # PowerVS HANA Instance parameters
-# #####################################################
+#####################################################
+# SAP HANA DB VSI parameters
+#####################################################
 
-# variable "powervs_hana_instance_sap_profile_id" {
-#   description = "PowerVS SAP HANA instance profile to use. Must be one of the supported profiles. See [here](https://cloud.ibm.com/docs/sap?topic=sap-hana-iaas-offerings-profiles-power-vs). File system sizes are automatically calculated. Override automatic calculation by setting values in optional parameter 'powervs_hana_instance_custom_storage_config'."
-#   type        = string
-#   default     = "sh2-4x256"
-# }
+variable "vsi_hana_db_profile" {
+  description = "VPC instance profile for the SAP HANA DB VSI. Must be a HANA-certified mx2, vx2d, or ux2d profile. The memory encoded in the profile name (e.g. mx2-16x128 → 128 GB) is used to auto-calculate volume sizes."
+  type        = string
+  default     = "mx2-16x128"
+}
 
-# variable "powervs_hana_instance_custom_storage_config" {
-#   description = "Custom file systems to be created and attached to PowerVS SAP HANA instance. 'size' is in GB. 'count' specify over how many storage volumes the file system will be striped. 'tier' specifies the storage tier in PowerVS workspace. 'mount' specifies the target mount point on OS. If not specified, volumes for '/hana/data', '/hana/log', '/hana/shared' are automatically calculated and created."
-#   type = list(object({
-#     name  = string
-#     size  = string
-#     count = string
-#     tier  = string
-#     mount = string
-#     pool  = optional(string)
-#   }))
-#   default = [{
-#     "name" : "",
-#     "size" : "",
-#     "count" : "",
-#     "tier" : "",
-#     "mount" : ""
-#   }]
-# }
+variable "vsi_hana_db_image" {
+  description = "OS image name for the SAP HANA DB VSI. Must be an SAP HANA certified RHEL or SLES image."
+  type        = string
+  default     = "ibm-redhat-9-6-amd64-sap-hana-10"
+}
 
-# variable "powervs_hana_instance_additional_storage_config" {
-#   description = "Additional File systems to be created and attached to PowerVS SAP HANA instance. 'size' is in GB. 'count' specify over how many storage volumes the file system will be striped. 'tier' specifies the storage tier in PowerVS workspace. 'mount' specifies the target mount point on OS."
-#   type = list(object({
-#     name  = string
-#     size  = string
-#     count = string
-#     tier  = string
-#     mount = string
-#   }))
-#   default = [{
-#     "name" : "usrsap",
-#     "size" : "50",
-#     "count" : "1",
-#     "tier" : "tier3",
-#     "mount" : "/usr/sap"
+variable "vsi_hana_db_storage_config" {
+  description = "Custom storage for the HANA DB VSI. Replaces the entire auto-calculated layout. Leave as default (empty name) to use auto-calculated volumes for hana/data, hana/log, hana/shared, usr/sap and swap from the profile memory. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
+  type = list(object({
+    name  = string
+    size  = string
+    count = string
+    iops  = string
+    mount = string
+    pool  = optional(string)
+  }))
+  default = [{
+    name  = ""
+    size  = ""
+    count = ""
+    iops  = ""
+    mount = ""
+  }]
+}
 
-#   }]
-# }
+variable "vsi_hana_db_additional_storage_config" {
+  description = "Additional block volumes to attach to the HANA DB VSI, appended after the custom or auto-calculated volumes. Useful for extra file systems such as backup or archive mounts. Leave as default (empty name) to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
+  type = list(object({
+    name  = string
+    size  = string
+    count = string
+    iops  = string
+    mount = string
+    pool  = optional(string)
+  }))
+  default = [{
+    name  = ""
+    size  = ""
+    count = ""
+    iops  = ""
+    mount = ""
+  }]
+}
 
-# #####################################################
-# # PowerVS NetWeaver Instance parameters
-# #####################################################
+#####################################################
+# SAP APP (NetWeaver) VSI parameters
+#####################################################
 
-# variable "powervs_netweaver_cpu_number" {
-#   description = "Number of CPUs for PowerVS SAP NetWeaver instance."
-#   type        = string
-#   default     = "3"
-# }
+variable "vsi_app_profile" {
+  description = "VPC instance profile for the SAP Application VSI."
+  type        = string
+  default     = "bx2-4x16"
+}
 
-# variable "powervs_netweaver_memory_size" {
-#   description = "Memory size for PowerVS SAP NetWeaver instance."
-#   type        = string
-#   default     = "32"
-# }
+variable "vsi_app_image" {
+  description = "OS image name for the SAP Application VSI. Must be an SAP Applications certified RHEL or SLES image."
+  type        = string
+  default     = "ibm-redhat-9-6-amd64-sap-applications-10"
+}
 
-# variable "powervs_netweaver_instance_storage_config" {
-#   description = "File systems to be created and attached to PowerVS SAP NetWeaver instance. 'size' is in GB. 'count' specifies over how many storage volumes the file system will be striped. 'tier' specifies the storage tier in PowerVS workspace. 'mount' specifies the target mount point on OS."
-#   type = list(object({
-#     name  = string
-#     size  = string
-#     count = string
-#     tier  = string
-#     mount = string
-#     pool  = optional(string)
-#   }))
-#   default = [
-#     {
-#       "name" : "usrsap",
-#       "size" : "50",
-#       "count" : "1",
-#       "tier" : "tier3",
-#       "mount" : "/usr/sap"
-#     }
-#   ]
-# }
+variable "vsi_app_storage_config" {
+  description = "Custom storage for the APP VSI. Replaces the default layout. Leave as default (empty name) to use the default layout [128 GB /usr/sap, 10 GB swap]. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
+  type = list(object({
+    name  = string
+    size  = string
+    count = string
+    iops  = string
+    mount = string
+  }))
+  default = [{
+    name  = ""
+    size  = ""
+    count = ""
+    iops  = ""
+    mount = ""
+  }]
+}
+
+variable "vsi_app_additional_storage_config" {
+  description = "Additional block volumes to attach to the APP VSI, appended after the custom or default volumes. Leave as default (empty name) to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
+  type = list(object({
+    name  = string
+    size  = string
+    count = string
+    iops  = string
+    mount = string
+  }))
+  default = [{
+    name  = ""
+    size  = ""
+    count = ""
+    iops  = ""
+    mount = ""
+  }]
+}
+
+
+
 
 #####################################################
 # OS parameters
@@ -126,12 +150,6 @@ variable "ssh_private_key" {
   description = "Private SSH key (RSA format) used to login to IBM PowerVS instances. Should match to uploaded public SSH key referenced by 'ssh_public_key' which was created previously. The key is temporarily stored and deleted. For more information about SSH keys, see [SSH keys](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
   type        = string
   sensitive   = true
-}
-
-variable "sap_domain" {
-  description = "SAP network domain name."
-  type        = string
-  default     = "sap.com"
 }
 
 variable "nfs_server_config" {
@@ -165,18 +183,6 @@ variable "vpc_landing_zone_images" {
   }
 }
 
-# variable "vpc_workload_default_sap_images" {
-#   description = "Default Red Hat Linux Full Linux subscription images to use for VPC SAP HANA and SAP NetWeaver instances."
-#   type = object({
-#     rhel_hana_image = string
-#     rhel_nw_image   = string
-#   })
-#   default = {
-#     "rhel_hana_image" : "RHEL9-SP6-SAP",
-#     "rhel_nw_image" : "RHEL9-SP6-SAP-NETWEAVER"
-#   }
-# }
-
 # #####################################################
 # # Parameters for SAP Installation
 # #####################################################
@@ -190,31 +196,27 @@ variable "vpc_landing_zone_images" {
 #   }
 # }
 
-# variable "ibmcloud_cos_configuration" {
-#   description = "Cloud Object Storage instance containing SAP installation files that will be downloaded to NFS share. 'cos_hana_software_path' must contain only binaries required for HANA DB installation. 'cos_solution_software_path' must contain only binaries required for S/4HANA or BW/4HANA installation and must not contain any IMDB files. 'cos_monitoring_software_path' is optional and must contain x86_64 SAPCAR and SAP HANA client binaries required for configuring monitoring instance. The binaries required for installation can be found [here](https://github.com/terraform-ibm-modules/terraform-ibm-powervs-sap/blob/main/solutions/ibm-catalog/sap-s4hana-bw4hana/docs/s4hana23_bw4hana21_binaries.md) If you have an optional stack xml file (maintenance planner), place it under the 'cos_solution_software_path' directory. Avoid inserting '/' at the beginning for 'cos_hana_software_path', 'cos_solution_software_path' and 'cos_monitoring_software_path'."
-#   type = object({
-#     cos_region                   = string
-#     cos_bucket_name              = string
-#     cos_hana_software_path       = string
-#     cos_solution_software_path   = string
-#     cos_monitoring_software_path = optional(string)
-#     cos_swpm_mp_stack_file_name  = string
-#   })
-#   default = {
-#     "cos_region" : "eu-geo",
-#     "cos_bucket_name" : "powervs-automation",
-#     "cos_hana_software_path" : "HANA_DB/rev87",
-#     "cos_solution_software_path" : "S4HANA_2023",
-#     "cos_monitoring_software_path" : "HANA_CLIENT/x86_64",
-#     "cos_swpm_mp_stack_file_name" : ""
-#   }
-# }
+variable "ibmcloud_cos_configuration" {
+  description = "IBM Cloud Object Storage bucket containing SAP installation binaries. 'cos_hana_software_path' must contain only HANA DB binaries. 'cos_solution_software_path' must contain only S/4HANA or BW/4HANA binaries (no IMDB files). Avoid a leading '/' in path values. Files are downloaded to the NFS share mount path."
+  type = object({
+    cos_region                 = string
+    cos_bucket_name            = string
+    cos_hana_software_path     = string
+    cos_solution_software_path = string
+  })
+  default = {
+    "cos_region" : "eu-geo",
+    "cos_bucket_name" : "sap-binaries",
+    "cos_hana_software_path" : "HANA_DB",
+    "cos_solution_software_path" : "S4HANA_2023"
+  }
+}
 
-# variable "ibmcloud_cos_service_credentials" {
-#   description = "IBM Cloud Object Storage instance service credentials to access the bucket in the instance.[json example of service credential](https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-service-credentials)"
-#   type        = string
-#   sensitive   = true
-# }
+variable "ibmcloud_cos_service_credentials" {
+  description = "Service credentials for the IBM Cloud Object Storage instance, as a JSON string. Must contain 'apikey' and 'resource_instance_id'. See https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-service-credentials."
+  type        = string
+  sensitive   = true
+}
 
 # variable "sap_hana_master_password" {
 #   description = "SAP HANA master password."
@@ -399,4 +401,20 @@ variable "vpc_subnet_cidrs" {
     "vpe"  = "10.30.30.0/24"
     "edge" = "10.30.40.0/24"
   }
+}
+
+#####################################################
+# Optional Parameters Activity Tracker and VPC Flow Logs
+#####################################################
+
+variable "enable_atracker" {
+  description = "Enable Activity Tracker. If true, Activity Tracker resources (KMS key, COS instance, bucket, and atracker configuration) will be created."
+  type        = bool
+  default     = true
+}
+
+variable "enable_vpc_flow_logs" {
+  description = "Enable VPC flow logs. If true, flow logs will be stored in the atracker bucket."
+  type        = bool
+  default     = true
 }
