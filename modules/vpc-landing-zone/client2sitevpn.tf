@@ -1,0 +1,158 @@
+#####################################################
+# Creates:
+# - Optional Secrets Manager
+# - Optional certificates
+# - Optional Client 2 site VPN
+#####################################################
+
+#####################################################
+# Locals
+#####################################################
+
+locals {
+
+  sm_guid                   = var.client_to_site_vpn.enable && var.existing_sm_instance_guid == null ? ibm_resource_instance.secrets_manager[0].guid : var.existing_sm_instance_guid
+  sm_region                 = var.client_to_site_vpn.enable && var.existing_sm_instance_region == null ? local.vpc_region : var.existing_sm_instance_region
+  certificate_template_name = "${var.prefix}-template"
+
+  root_ca_name         = "${var.prefix}-root-ca"
+  root_ca_common_name  = "example.com"
+  intermediate_ca_name = "${var.prefix}-intermediate-ca"
+  cert_common_name     = "example"
+
+  # vpc routes
+  vpc_server_routes = {
+    "vpc-vpn" : {
+      destination = var.vpc_subnet_cidrs.vpn
+      action      = "deliver"
+    },
+    "vpc-mgmt" : {
+      destination = var.vpc_subnet_cidrs.mgmt
+      action      = "deliver"
+    },
+    "vpc-vpe" : {
+      destination = var.vpc_subnet_cidrs.vpe
+      action      = "deliver"
+    },
+    "vpc-edge" : {
+      destination = var.vpc_subnet_cidrs.edge
+      action      = "deliver"
+    }
+  }
+
+  # add additional routes (needed for networks created outside of this module)
+  additional_routes = var.client_to_site_vpn.powervs_server_routes != null ? tomap(
+    {
+      for instance in var.client_to_site_vpn.powervs_server_routes :
+      instance.route_name => {
+        destination = instance.destination
+        action      = instance.action
+      }
+    }
+  ) : {}
+
+  vpn_server_routes = merge(local.vpc_server_routes, local.additional_routes)
+}
+
+
+# Create a new SM instance if not using an existing one
+resource "ibm_resource_instance" "secrets_manager" {
+  provider = ibm.ibm-sm
+  count    = var.client_to_site_vpn.enable && var.existing_sm_instance_guid == null ? 1 : 0
+
+  name              = "${var.prefix}-sm-instance"
+  service           = "secrets-manager"
+  plan              = var.sm_service_plan
+  location          = local.sm_region
+  resource_group_id = module.landing_zone.resource_group_data["${var.prefix}-slz-service-rg"]
+  tags              = var.tags
+  parameters = {
+    "allowed_network" : "public-and-private"
+  }
+  timeouts {
+    create = "20m" # Extending provisioning time to 20 minutes
+  }
+}
+
+# Configure private cert engine if provisioning a new SM instance
+module "private_secret_engine" {
+  source     = "terraform-ibm-modules/secrets-manager-private-cert-engine/ibm"
+  version    = "2.0.5"
+  providers  = { ibm = ibm.ibm-sm }
+  count      = var.client_to_site_vpn.enable ? 1 : 0
+  depends_on = [ibm_resource_instance.secrets_manager]
+
+  secrets_manager_guid = local.sm_guid
+  region               = local.sm_region
+  root_ca_name         = local.root_ca_name
+  root_ca_common_name  = local.root_ca_common_name
+  root_ca_max_ttl      = "8760h"
+  intermediate_ca_name = local.intermediate_ca_name
+  certificate_templates = [{
+    name = local.certificate_template_name
+  }]
+}
+
+# Create a secret group to place the certificate in
+module "secrets_manager_group" {
+  source    = "terraform-ibm-modules/secrets-manager-secret-group/ibm"
+  version   = "1.5.5"
+  providers = { ibm = ibm.ibm-sm }
+  count     = var.client_to_site_vpn.enable ? 1 : 0
+
+  region                   = local.sm_region
+  secrets_manager_guid     = local.sm_guid
+  secret_group_name        = "${var.prefix}-certificates-secret-group"
+  secret_group_description = "secret group used for private certificates"
+
+}
+
+# Create private cert to use for VPN server
+module "secrets_manager_private_certificate" {
+  source     = "terraform-ibm-modules/secrets-manager-private-cert/ibm"
+  version    = "1.12.8"
+  providers  = { ibm = ibm.ibm-sm }
+  count      = var.client_to_site_vpn.enable ? 1 : 0
+  depends_on = [module.private_secret_engine]
+
+
+  cert_name              = "${var.prefix}-cts-vpn-private-cert"
+  cert_description       = "an example private cert"
+  cert_template          = local.certificate_template_name
+  cert_secrets_group_id  = module.secrets_manager_group[0].secret_group_id
+  cert_common_name       = local.cert_common_name
+  secrets_manager_guid   = local.sm_guid
+  secrets_manager_region = local.sm_region
+
+}
+
+# Create client to site VPN Server
+module "client_to_site_vpn" {
+  source    = "terraform-ibm-modules/client-to-site-vpn/ibm"
+  version   = "3.6.7"
+  providers = { ibm = ibm.ibm-is }
+  count     = var.client_to_site_vpn.enable ? 1 : 0
+
+  vpn_gateway_name  = "${var.prefix}-vpc-pvs-vpn"
+  resource_group_id = module.landing_zone.resource_group_data["${var.prefix}-slz-edge-rg"]
+  access_group_name = "${var.prefix}-client-to-site-vpn-access-group"
+  subnet_ids        = [for subnet in module.landing_zone.subnet_data : subnet.id if subnet.name == "${var.prefix}-edge-vpn-zone-${regex("[0-9]+$", var.vpc_zone)}"]
+  client_ip_pool    = var.client_to_site_vpn.client_ip_pool
+  # vpn supports only 2 dns servers
+  client_dns_server_ips         = null
+  server_cert_crn               = module.secrets_manager_private_certificate[0].secret_crn
+  vpn_client_access_group_users = var.client_to_site_vpn.vpn_client_access_group_users
+  vpn_server_routes             = local.vpn_server_routes
+}
+
+# Allows VPN Clients <=> Transit Gateway traffic
+resource "ibm_is_vpc_address_prefix" "vpn_address_prefix" {
+  provider   = ibm.ibm-is
+  count      = var.client_to_site_vpn.enable ? 1 : 0
+  depends_on = [module.landing_zone, module.client_to_site_vpn]
+
+  zone = var.vpc_zone
+  name = "${var.prefix}-vpn-address-prefix"
+  vpc  = [for vpc in module.landing_zone.vpc_data : vpc.vpc_id if vpc.vpc_name == "${var.prefix}-edge"][0]
+  cidr = var.client_to_site_vpn.client_ip_pool
+}
