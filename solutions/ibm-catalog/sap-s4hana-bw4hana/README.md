@@ -3,14 +3,14 @@
 # Summary
 
 ## Summary Outcome:
-   SAP S/4HANA or SAP BW/4HANA installation configuration to IBM PowerVS hosts.
+   SAP S/4HANA or SAP BW/4HANA installation configuration to IBM VPC hosts.
 
-|                                  Variation                                  | Available on IBM Catalog | Requires Schematics Workspace ID | Creates PowerVS with VPC landing zone | Creates PowerVS HANA Instance | Creates PowerVS NW Instances | Performs PowerVS OS Config | Performs PowerVS SAP Tuning | Install SAP software |
+|                                  Variation                                  | Available on IBM Catalog | Requires Schematics Workspace ID | Creates VPC with VPC landing zone | Creates VPC HANA Instance | Creates VPC NW Instances | Performs VPC OS Config | Performs VPC SAP Tuning | Install SAP software |
 |:---------------------------------------------------------------------------:|:------------------------:|:--------------------------------:|:-------------------------------------:|:-----------------------------:|:----------------------------:|:--------------------------:|:---------------------------:|:--------------------:|
 | [IBM catalog SAP S/4HANA or BW/4HANA variation]( ./) |    :heavy_check_mark:    |        :heavy_check_mark:        |        :heavy_check_mark:        |               1               |            1            |     :heavy_check_mark:     |      :heavy_check_mark:     |          :heavy_check_mark:         |
 
 ## Architecture Diagram
-![sap-s4hana-bw4hana](https://github.com/terraform-ibm-modules/terraform-ibm-powervs-sap/blob/main/reference-architectures/sap-s4hana-bw4hana/deploy-arch-ibm-pvs-sap-s4hana-bw4hana.svg)
+![sap-s4hana-bw4hana](https://github.com/terraform-ibm-modules/terraform-ibm-VPC-sap/blob/main/reference-architectures/sap-s4hana-bw4hana/deploy-arch-ibm-pvs-sap-s4hana-bw4hana.svg)
 
 ## Overview
 1. [Summary Tasks](#summary-tasks)
@@ -20,35 +20,25 @@
 5. [Storage setup](#storage-setup)
 6. [Ansible roles used](#ansible-roles-used)
 
-- A **VPC Infrastructure** with the following components:
-    - One VSI for management (jump/bastion)
-    - One VSI for network-services configured as squid proxy, NTP and DNS servers(using Ansible Galaxy collection roles [ibm.power_linux_sap collection](https://galaxy.ansible.com/ui/repo/published/ibm/power_linux_sap/). This VSI also acts as central ansible execution node.
-    - Optional VSI for Monitoring host
-    - Optional [Client to site VPN server](https://cloud.ibm.com/docs/vpc?topic=vpc-vpn-client-to-site-overview)
-    - Optional [File storage share](https://cloud.ibm.com/docs/vpc?topic=vpc-file-storage-create&interface=ui)
-    - Optional [Network load balancer](https://cloud.ibm.com/docs/vpc?group=network-load-balancer)
-    - Optional [IBM Cloud Security and Compliance Center Workload Protection](https://cloud.ibm.com/docs/workload-protection) and SCC Workload Protection agent configuration on the VSIs in the deployment
-    - IBM Cloud Object storage(COS) Virtual Private endpoint gateway(VPE)
-    - IBM Cloud Object storage(COS) Instance and buckets
-    - VPC flow logs
-    - KMS keys
-    - Activity tracker
-    - Optional Secrets Manager Instance Instance with private certificate.
-
-- A local or global **transit gateway**
+- With the following components:
+- One VSI for management (jump/bastion)
+- One VSI for network-services configured as squid proxy, NTP and DNS servers(using Ansible Galaxy collection roles [ibm.power_linux_sap collection](https://galaxy.ansible.com/ui/repo/published/ibm/power_linux_sap/). This VSI also acts as central ansible execution node.
+- Optional VSI for Monitoring host
+- Optional [Client to site VPN server](https://cloud.ibm.com/docs/vpc?topic=vpc-vpn-client-to-site-overview)
+- Optional [File storage share](https://cloud.ibm.com/docs/vpc?topic=vpc-file-storage-create&interface=ui)
+- Optional [Network load balancer](https://cloud.ibm.com/docs/vpc?group=network-load-balancer)
+- Optional [IBM Cloud Security and Compliance Center Workload Protection](https://cloud.ibm.com/docs/workload-protection) and SCC Workload Protection agent configuration on the VSIs in the deployment
+- IBM Cloud Object storage(COS) Virtual Private endpoint gateway(VPE)
+- IBM Cloud Object storage(COS) Instance and buckets
+- VPC flow logs
+- KMS keys
+- Activity tracker
+- Optional Secrets Manager Instance Instance with private certificate.
 - An optional IBM Cloud Monitoring Instance
-
-- A **Power Virtual Server** workspace with the following network topology:
-    - Creates a new private subnet for SAP communication for the entire landscape.
-    - Attaches the PowerVS workspace to transit gateway.
-    - Creates an SSH key.
-    - Optionally imports up to two custom images from Cloud Object Storage.
-- Creates and configures one PowerVS instance for SAP HANA based on best practices for HANA database.
-- Creates and configures one PowerVS instance for SAP NetWeaver based on best practices, hosting the PAS and ASCS instances.
-- Optionally let's the user choose a byol or custom os image for the HANA and Netweaver PowerVS instances and activate it with user provided os registration credentials.
-- Connects all created PowerVS instances to a proxy server specified by IP address or hostname.
-- Connects all created PowerVS instances to an NTP server and DNS forwarder specified by IP address or hostname.
-- Configures a shared NFS directory on all created PowerVS instances.
+- Creates and configures one VPC instance for SAP HANA based on best practices for HANA database.
+- Creates and configures one VPC instance for SAP NetWeaver based on best practices, hosting the PAS and ASCS instances.
+- Connects all created VPC instances to an NTP server and DNS forwarder specified by IP address or hostname.
+- Configures a shared NFS directory on all created VPC instances.
 - Optionally configures the monitoring host to collect relevant information from the Database and application servers and send it to the IBM Cloud® Monitoring Instance
 - Optionally installs Sysdig agent and configures connection to [IBM Cloud Security and Compliance Center Workload Protection](https://cloud.ibm.com/docs/workload-protection)
 - Supports installation of **S/4HANA2023, S/4HANA2022, S/4HANA2021, S/4HANA2020, BW/4HANA2021**.
