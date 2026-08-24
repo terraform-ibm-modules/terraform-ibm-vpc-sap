@@ -142,7 +142,7 @@ module "app_server" {
 
 #######################################################
 # Configure Network Services on SAP HANA DB VSI
-# Configures DNS, NTP, NFS and Proxy as client
+# Configures DNS, NTP, NFS filesystems
 #######################################################
 
 module "linux_init_hana_db" {
@@ -189,10 +189,10 @@ module "linux_init_hana_db" {
 
 #######################################################
 # Configure Network Services on SAP APP (NetWeaver) VSI
-# Configures DNS, NTP, NFS and Proxy as client
+# Configures DNS, NTP, NFS filesystems
 #######################################################
 
-module "linux_init_app" {
+module "linux_init_app_server" {
   source     = "../../../modules/vpc-landing-zone/submodules/ansible"
   depends_on = [module.app_server]
 

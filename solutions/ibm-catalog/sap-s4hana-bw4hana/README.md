@@ -102,12 +102,12 @@
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_app"></a> [app](#module\_app) | ../../../modules/vsi | n/a |
+| <a name="module_app_server"></a> [app\_server](#module\_app\_server) | ../../../modules/vsi | n/a |
 | <a name="module_hana_db"></a> [hana\_db](#module\_hana\_db) | ../../../modules/vsi | n/a |
 | <a name="module_ibmcloud_cos_download_hana_binaries"></a> [ibmcloud\_cos\_download\_hana\_binaries](#module\_ibmcloud\_cos\_download\_hana\_binaries) | ../../../modules/ibmcloud-cos | n/a |
 | <a name="module_ibmcloud_cos_download_solution_binaries"></a> [ibmcloud\_cos\_download\_solution\_binaries](#module\_ibmcloud\_cos\_download\_solution\_binaries) | ../../../modules/ibmcloud-cos | n/a |
-| <a name="module_linux_init_app"></a> [linux\_init\_app](#module\_linux\_init\_app) | ../../../modules/vpc-landing-zone/ | n/a |
-| <a name="module_linux_init_hana_db"></a> [linux\_init\_hana\_db](#module\_linux\_init\_hana\_db) | ../../../modules/ansible | n/a |
+| <a name="module_linux_init_app_server"></a> [linux\_init\_app\_server](#module\_linux\_init\_app\_server) | ../../../modules/vpc-landing-zone/submodules/ansible | n/a |
+| <a name="module_linux_init_hana_db"></a> [linux\_init\_hana\_db](#module\_linux\_init\_hana\_db) | ../../../modules/vpc-landing-zone/submodules/ansible | n/a |
 | <a name="module_standard"></a> [standard](#module\_standard) | ../../../modules/vpc-landing-zone | n/a |
 
 ### Resources
