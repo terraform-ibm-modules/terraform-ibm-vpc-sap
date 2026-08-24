@@ -66,7 +66,7 @@ locals {
     cos_region               = var.ibmcloud_cos_configuration.cos_region
     cos_resource_instance_id = local.cos_instance_id
     cos_bucket_name          = var.ibmcloud_cos_configuration.cos_bucket_name
-    cos_dir_name             = var.ibmcloud_cos_configuration.#cos_solution_software_path
+    cos_dir_name             = var.ibmcloud_cos_configuration.cos_solution_software_path
     download_dir_path        = local.cos_download_dir
   }
 }
