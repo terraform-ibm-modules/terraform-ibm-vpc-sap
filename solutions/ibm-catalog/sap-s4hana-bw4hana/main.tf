@@ -153,7 +153,6 @@ module "linux_init_hana_db" {
   ansible_host_or_ip     = module.standard.ansible_host_or_ip
   ssh_private_key        = var.ssh_private_key
   configure_ansible_host = false
-  ansible_vault_password = var.ansible_vault_password
 
   src_script_template_name = "configure-network-services/ansible_exec.sh.tftpl"
   dst_script_file_name     = "${var.prefix}-hanadb-linux-init.sh"
@@ -200,7 +199,6 @@ module "linux_init_app_server" {
   ansible_host_or_ip     = module.standard.ansible_host_or_ip
   ssh_private_key        = var.ssh_private_key
   configure_ansible_host = false
-  ansible_vault_password = var.ansible_vault_password
 
   src_script_template_name = "configure-network-services/ansible_exec.sh.tftpl"
   dst_script_file_name     = "${var.prefix}-app-linux-init.sh"
