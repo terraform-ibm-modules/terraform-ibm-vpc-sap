@@ -120,7 +120,7 @@ module "hana_db" {
 # SAP APP (NetWeaver) VSI
 #######################################################
 
-module "app" {
+module "app_server" {
   source     = "../../../modules/vsi"
   depends_on = [module.standard]
 
@@ -146,8 +146,8 @@ module "app" {
 #######################################################
 
 module "linux_init_hana_db" {
-  source     = "../../../modules/ansible"
-  depends_on = [module.hana_db, module.standard]
+  source     = "../../../modules/vpc-landing-zone/submodules/ansible"
+  depends_on = [module.hana_db]
 
   bastion_host_ip        = module.standard.access_host_or_ip
   ansible_host_or_ip     = module.standard.ansible_host_or_ip
@@ -155,22 +155,22 @@ module "linux_init_hana_db" {
   configure_ansible_host = false
   ansible_vault_password = var.ansible_vault_password
 
-  src_script_template_name = "configure-sap-vsi/ansible_exec.sh.tftpl"
-  dst_script_file_name     = "${var.prefix}-hanadb-network-services.sh"
+  src_script_template_name = "configure-network-services/ansible_exec.sh.tftpl"
+  dst_script_file_name     = "${var.prefix}-hanadb-linux-init.sh"
 
   src_playbook_template_name = "configure-network-services/playbook-configure-network-services.yml.tftpl"
-  dst_playbook_file_name     = "${var.prefix}-hanadb-network-services-playbook.yml"
+  dst_playbook_file_name     = "${var.prefix}-hanadb-linux-init-playbook.yml"
 
-  src_inventory_template_name = "vpc-instance-inventory.tftpl"
-  dst_inventory_file_name     = "${var.prefix}-hanadb-network-services-inventory"
+  src_inventory_template_name = "inventory.tftpl"
+  dst_inventory_file_name     = "${var.prefix}-hanadb-linux-init-inventory"
 
   playbook_template_vars = {
     "server_config" : jsonencode({})
     "client_config" : jsonencode({
       "squid" : {
-        enable          = true
-        squid_port      = "3128"
-        squid_server_ip = module.standard.ansible_host_or_ip
+        enable          = false
+        squid_port      = ""
+        squid_server_ip = ""
       }
       "dns" : { enable = true, dns_server_ip = module.standard.ansible_host_or_ip }
       "ntp" : { enable = true, ntp_server_ip = module.standard.ansible_host_or_ip }
@@ -193,8 +193,8 @@ module "linux_init_hana_db" {
 #######################################################
 
 module "linux_init_app" {
-  source     = "../../../modules/ansible"
-  depends_on = [module.app, module.standard]
+  source     = "../../../modules/vpc-landing-zone/submodules/ansible"
+  depends_on = [module.app_server]
 
   bastion_host_ip        = module.standard.access_host_or_ip
   ansible_host_or_ip     = module.standard.ansible_host_or_ip
@@ -202,22 +202,22 @@ module "linux_init_app" {
   configure_ansible_host = false
   ansible_vault_password = var.ansible_vault_password
 
-  src_script_template_name = "configure-sap-vsi/ansible_exec.sh.tftpl"
-  dst_script_file_name     = "${var.prefix}-app-network-services.sh"
+  src_script_template_name = "configure-network-services/ansible_exec.sh.tftpl"
+  dst_script_file_name     = "${var.prefix}-app-linux-init.sh"
 
   src_playbook_template_name = "configure-network-services/playbook-configure-network-services.yml.tftpl"
-  dst_playbook_file_name     = "${var.prefix}-app-network-services-playbook.yml"
+  dst_playbook_file_name     = "${var.prefix}-app-linux-init-playbook.yml"
 
-  src_inventory_template_name = "vpc-instance-inventory.tftpl"
-  dst_inventory_file_name     = "${var.prefix}-app-network-services-inventory"
+  src_inventory_template_name = "inventory.tftpl"
+  dst_inventory_file_name     = "${var.prefix}-app-linux-init-inventory"
 
   playbook_template_vars = {
     "server_config" : jsonencode({})
     "client_config" : jsonencode({
       "squid" : {
-        enable          = true
-        squid_port      = "3128"
-        squid_server_ip = module.standard.ansible_host_or_ip
+        enable          = false
+        squid_port      = ""
+        squid_server_ip = ""
       }
       "dns" : { enable = true, dns_server_ip = module.standard.ansible_host_or_ip }
       "ntp" : { enable = true, ntp_server_ip = module.standard.ansible_host_or_ip }
@@ -231,7 +231,7 @@ module "linux_init_app" {
     })
   }
 
-  inventory_template_vars = { "host_or_ip" : module.app.instance_ip }
+  inventory_template_vars = { "host_or_ip" : module.app_server.instance_ip }
 }
 
 
