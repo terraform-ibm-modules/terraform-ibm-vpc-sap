@@ -69,15 +69,15 @@ output "hana_db_volumes" {
 output "app_instance" {
   description = "SAP Application (NetWeaver) VSI details: id, name, zone, and primary private IP."
   value = {
-    id      = module.app.instance_id
-    name    = module.app.instance_name
-    zone    = module.app.instance_zone
-    ip      = module.app.instance_ip
-    profile = module.app.instance_profile
+    id      = module.app_server.instance_id
+    name    = module.app_server.instance_name
+    zone    = module.app_server.instance_zone
+    ip      = module.app_server.instance_ip
+    profile = module.app_server.instance_profile
   }
 }
 
 output "app_volumes" {
   description = "Block volumes attached to the SAP Application VSI."
-  value       = module.app.volumes
+  value       = module.app_server.volumes
 }
