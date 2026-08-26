@@ -1,23 +1,37 @@
 # ------------------------------------------------------------------------
-# This playbook uses the ibm.power_linux_sap collection. This collection is
-# available on ansible galaxy
-# https://galaxy.ansible.com/ui/repo/published/ibm/power_linux_sap/ and can
-# be installed using 'ansible-galaxy collection install ibm.power_linux_sap'
+# This playbook uses the redhat.sap_install collection for Intel VPC VSIs.
+# The collection is installed via rhel-system-roles-sap package.
 # ------------------------------------------------------------------------
 
 ---
 - name: Ansible Play for preparing OS for SAP
   hosts: all
+  become: true
   vars:
-    sap_hana_preconfigure_min_rhel_release_check: false
-    sap_hana_preconfigure_ibm_power_repo_url: 'https://public.dhe.ibm.com/software/server/POWER/Linux/yum/download/ibm-power-repo-latest.noarch.rpm'
     sap_solution: ${sap_solution}
     sap_domain: ${sap_domain}
 
-  roles:
-   - { role: ibm.power_linux_sap.powervs_configure_os_for_sap, when: sap_solution is defined }
-
   tasks:
+  - name: Run SAP general preconfigure
+    ansible.builtin.include_role:
+      name: redhat.sap_install.sap_general_preconfigure
+    vars:
+      sap_general_preconfigure_fail_if_reboot_required: false
+
+  - name: Run SAP HANA preconfigure
+    ansible.builtin.include_role:
+      name: redhat.sap_install.sap_hana_preconfigure
+    vars:
+      sap_hana_preconfigure_fail_if_reboot_required: false
+    when:
+      - sap_solution is match("HANA")
+
+  - name: Run SAP Netweaver preconfigure
+    ansible.builtin.include_role:
+      name: redhat.sap_install.sap_netweaver_preconfigure
+    when:
+      - sap_solution is match("NETWEAVER")
+
   - name: Reboot the machine with timeout 10 mins
     ansible.builtin.reboot:
 

@@ -101,10 +101,40 @@ locals {
 
   app_storage_default = [
     { name = "usr-sap", size = "128", iops = "10iops-tier", mount = "/usr/sap", count = "1" },
-    { name = "swap", size = "10", iops = "10iops-tier", mount = "swap", count = "1" },
+    { name = "swap", size = "30", iops = "10iops-tier", mount = "swap", count = "1" },
   ]
   # Custom config replaces the default; additional volumes (when non-empty) are always appended.
   app_storage = concat(local.app_config_provided ? var.vsi_app_storage_config : local.app_storage_default, local.app_additional_provided ? var.vsi_app_additional_storage_config : [])
   # Keyed map used by for_each in the volume resource — key = "{prefix}-app-{name}"
   app_volume_map = { for v in local.app_storage : "${var.prefix}-app-${v.name}" => v }
+
+
+  #######################################################################
+  # Filesystem storage_config — the new "configure-network-services/
+  # storage_config" variable passed to the playbook template.
+  #######################################################################
+
+  hana_fs_config = [
+    for v in local.hana_storage : {
+      name       = v.name
+      mount      = v.mount
+      disk_count = tonumber(v.count)
+      disk_size  = tonumber(v.size)
+      disk_type  = "LVM"
+      filesystem = v.mount == "swap" ? "swap" : "xfs"
+      on_disk_as = "partitions"
+    }
+  ]
+
+  app_fs_config = [
+    for v in local.app_storage : {
+      name       = v.name
+      mount      = v.mount
+      disk_count = tonumber(v.count)
+      disk_size  = tonumber(v.size)
+      disk_type  = "LVM"
+      filesystem = v.mount == "swap" ? "swap" : "xfs"
+      on_disk_as = "partitions"
+    }
+  ]
 }

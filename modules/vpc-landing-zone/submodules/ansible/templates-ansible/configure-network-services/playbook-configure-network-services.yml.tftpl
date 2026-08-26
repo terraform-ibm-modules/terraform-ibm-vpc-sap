@@ -10,8 +10,73 @@
 - name: Ansible play to install management network services on network-services vsi in edge vpc
   hosts: all
   vars:
-    server_config: ${server_config}
-    client_config: ${client_config}
+    server_config: '${server_config}'
+    client_config: '${client_config}'
+    storage_config: '${storage_config}'
 
   roles:
-  - { role: ibm.power_linux_sap.configure_network_management_services, when: server_config!= "" or client_config!= ""}
+  - role: ibm.power_linux_sap.configure_network_management_services
+    when: server_config != "" or client_config != ""
+
+- name: Ansible play to create filesystems on block volumes
+  hosts: all
+  vars:
+    storage_config: '${storage_config}'
+  tasks:
+  - name: Skip filesystem creation if no storage_config provided
+    ansible.builtin.meta: end_play
+    when: storage_config == "[]" or storage_config == ""
+
+  - name: Install lvm2 and xfsprogs
+    ansible.builtin.package:
+      name:
+        - lvm2
+        - xfsprogs
+      state: present
+
+  - name: Get block devices with sizes in bytes
+    ansible.builtin.shell: |
+      lsblk -dn -o NAME,SIZE,TYPE,PTTYPE --bytes | awk '$3=="disk" && $4=="" {print $1,$2}'
+    register: lsblk_out
+    changed_when: false
+
+  - name: Create LVM volume group, logical volume, filesystem and mount for each volume
+    ansible.builtin.shell: |
+      set -e
+      NAME="{{ item.name | replace('-', '_') }}"
+      MOUNT="{{ item.mount }}"
+      SIZE_BYTES="{{ (item.disk_size | int) * 1073741824 }}"
+      FSTYPE="{{ item.filesystem }}"
+
+      # find an unpartitioned data disk whose size matches exactly
+      DEVICE=$(lsblk -dn -o NAME,SIZE,TYPE,PTTYPE --bytes | awk -v s="$${SIZE_BYTES}" '$3=="disk" && $4=="" && $2==s {print "/dev/"$1}' | head -1)
+
+      if [ -z "$${DEVICE}" ]; then
+        echo "ERROR: no device found with size $${SIZE_BYTES} bytes for volume $${NAME}"
+        exit 1
+      fi
+
+      VG="vg_$${NAME}"
+      LV="lv_$${NAME}"
+
+      # skip if vg already exists (idempotent)
+      if vgdisplay "$${VG}" > /dev/null 2>&1; then
+        echo "VG $${VG} already exists, skipping"
+      else
+        pvcreate -ff -y "$${DEVICE}"
+        vgcreate "$${VG}" "$${DEVICE}"
+        lvcreate -l 100%FREE -n "$${LV}" "$${VG}"
+        if [ "$${FSTYPE}" = "swap" ]; then
+          mkswap "/dev/$${VG}/$${LV}"
+          swapon "/dev/$${VG}/$${LV}" || true
+          echo "/dev/$${VG}/$${LV} none swap defaults 0 0" >> /etc/fstab
+        else
+          mkfs.xfs "/dev/$${VG}/$${LV}"
+          mkdir -p "$${MOUNT}"
+          mount "/dev/$${VG}/$${LV}" "$${MOUNT}"
+          echo "/dev/$${VG}/$${LV} $${MOUNT} xfs defaults 0 0" >> /etc/fstab
+        fi
+      fi
+    loop: "{{ storage_config | from_json }}"
+    loop_control:
+      label: "{{ item.name }}"

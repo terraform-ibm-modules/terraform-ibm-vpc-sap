@@ -152,7 +152,7 @@ module "linux_init_hana_db" {
   bastion_host_ip        = module.standard.access_host_or_ip
   ansible_host_or_ip     = module.standard.ansible_host_or_ip
   ssh_private_key        = var.ssh_private_key
-  configure_ansible_host = false
+  configure_ansible_host = true
 
   src_script_template_name = "configure-network-services/ansible_exec.sh.tftpl"
   dst_script_file_name     = "${var.prefix}-hanadb-linux-init.sh"
@@ -181,10 +181,12 @@ module "linux_init_hana_db" {
         fstype          = "nfs4"
       }
     })
+    "storage_config" : jsonencode(local.hana_fs_config)
   }
 
   inventory_template_vars = { "host_or_ip" : module.hana_db.instance_ip }
 }
+
 
 #######################################################
 # Configure Network Services on SAP APP (NetWeaver) VSI
@@ -227,11 +229,67 @@ module "linux_init_app_server" {
         fstype          = "nfs4"
       }
     })
+    "storage_config" : jsonencode(local.app_fs_config)
   }
 
   inventory_template_vars = { "host_or_ip" : module.app_server.instance_ip }
 }
 
+#######################################################
+# SAP OS preconfiguration — HANA DB VSI
+#######################################################
+
+module "configure_os_hana_db" {
+  source     = "../../../modules/ansible"
+  depends_on = [module.linux_init_hana_db]
+
+  bastion_host_ip        = module.standard.access_host_or_ip
+  ansible_host_or_ip     = module.standard.ansible_host_or_ip
+  ssh_private_key        = var.ssh_private_key
+  configure_ansible_host = false
+
+  src_script_template_name = "configure-os-for-sap/ansible_exec.sh.tftpl"
+  dst_script_file_name     = "${var.prefix}-hanadb-configure-os.sh"
+
+  src_playbook_template_name = "configure-os-for-sap/playbook-configure-os-for-sap.yml.tftpl"
+  dst_playbook_file_name     = "${var.prefix}-hanadb-configure-os-playbook.yml"
+  playbook_template_vars = {
+    "sap_solution" : "HANA"
+    "sap_domain" : "sap.${var.prefix}.local"
+  }
+
+  src_inventory_template_name = "pi-instance-inventory.tftpl"
+  dst_inventory_file_name     = "${var.prefix}-hanadb-configure-os-inventory"
+  inventory_template_vars     = { "pi_instance_management_ip" : module.hana_db.instance_ip }
+}
+
+#######################################################
+# SAP OS preconfiguration — APP (NetWeaver) VSI
+#######################################################
+
+module "configure_os_app_server" {
+  source     = "../../../modules/ansible"
+  depends_on = [module.linux_init_app_server]
+
+  bastion_host_ip        = module.standard.access_host_or_ip
+  ansible_host_or_ip     = module.standard.ansible_host_or_ip
+  ssh_private_key        = var.ssh_private_key
+  configure_ansible_host = false
+
+  src_script_template_name = "configure-os-for-sap/ansible_exec.sh.tftpl"
+  dst_script_file_name     = "${var.prefix}-app-configure-os.sh"
+
+  src_playbook_template_name = "configure-os-for-sap/playbook-configure-os-for-sap.yml.tftpl"
+  dst_playbook_file_name     = "${var.prefix}-app-configure-os-playbook.yml"
+  playbook_template_vars = {
+    "sap_solution" : "NETWEAVER"
+    "sap_domain" : "sap.${var.prefix}.local"
+  }
+
+  src_inventory_template_name = "pi-instance-inventory.tftpl"
+  dst_inventory_file_name     = "${var.prefix}-app-configure-os-inventory"
+  inventory_template_vars     = { "pi_instance_management_ip" : module.app_server.instance_ip }
+}
 
 # locals {
 #   monitoring_instance = module.standard.monitoring_instance
