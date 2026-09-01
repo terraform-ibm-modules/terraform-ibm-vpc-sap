@@ -73,7 +73,7 @@ locals {
   hana_shared_gb = min(local.hana_memory_gb, 1024)
   # /usr/sap and swap are fixed
   hana_usr_sap_gb = 50
-  hana_swap_gb    = 10
+  hana_swap_gb    = 32
 
   # Empty-sentinel check: a single entry with name="" means "use defaults"
   hana_config_provided     = length(var.vsi_hana_db_storage_config) > 0 && var.vsi_hana_db_storage_config[0].name != ""
@@ -87,14 +87,14 @@ locals {
     { name = "swap", size = tostring(local.hana_swap_gb), iops = "10iops-tier", mount = "swap", count = "1" },
   ]
   # Custom config replaces the default; additional volumes (when non-empty) are always appended.
-  hana_storage = concat(local.hana_config_provided ? var.vsi_hana_db_storage_config : local.hana_storage_default, local.hana_additional_provided ? var.vsi_hana_db_additional_storage_config : [])
+    hana_storage = concat(local.hana_config_provided ? var.vsi_hana_db_storage_config : local.hana_storage_default, local.hana_additional_provided ? var.vsi_hana_db_additional_storage_config : [])
   # Keyed map used by for_each in the volume resource — key = "{prefix}-{hostname}-{name}"
-  hana_volume_map = { for v in local.hana_storage : "${var.prefix}-hanadb-${v.name}" => v }
+  hana_volume_map    = { for v in local.hana_storage : "${var.prefix}-hanadb-${v.name}" => v }
+  hana_vol_mount_map = { for v in local.hana_storage : v.name => v.mount }
+  hana_vol_fs_map    = { for v in local.hana_storage : v.name => (v.mount == "swap" ? "swap" : "xfs") }
 
   #######################################################################
   # APP (NetWeaver) volume sizing.
-  # A /usr/sap volume plus a swap disk is the default layout for the
-  # application tier.
   #######################################################################
   app_config_provided     = length(var.vsi_app_storage_config) > 0 && var.vsi_app_storage_config[0].name != ""
   app_additional_provided = length(var.vsi_app_additional_storage_config) > 0 && var.vsi_app_additional_storage_config[0].name != ""
@@ -103,38 +103,9 @@ locals {
     { name = "usr-sap", size = "128", iops = "10iops-tier", mount = "/usr/sap", count = "1" },
     { name = "swap", size = "30", iops = "10iops-tier", mount = "swap", count = "1" },
   ]
-  # Custom config replaces the default; additional volumes (when non-empty) are always appended.
   app_storage = concat(local.app_config_provided ? var.vsi_app_storage_config : local.app_storage_default, local.app_additional_provided ? var.vsi_app_additional_storage_config : [])
   # Keyed map used by for_each in the volume resource — key = "{prefix}-app-{name}"
-  app_volume_map = { for v in local.app_storage : "${var.prefix}-app-${v.name}" => v }
-
-
-  #######################################################################
-  # Filesystem storage_config — the new "configure-network-services/
-  # storage_config" variable passed to the playbook template.
-  #######################################################################
-
-  hana_fs_config = [
-    for v in local.hana_storage : {
-      name       = v.name
-      mount      = v.mount
-      disk_count = tonumber(v.count)
-      disk_size  = tonumber(v.size)
-      disk_type  = "LVM"
-      filesystem = v.mount == "swap" ? "swap" : "xfs"
-      on_disk_as = "partitions"
-    }
-  ]
-
-  app_fs_config = [
-    for v in local.app_storage : {
-      name       = v.name
-      mount      = v.mount
-      disk_count = tonumber(v.count)
-      disk_size  = tonumber(v.size)
-      disk_type  = "LVM"
-      filesystem = v.mount == "swap" ? "swap" : "xfs"
-      on_disk_as = "partitions"
-    }
-  ]
+  app_volume_map    = { for v in local.app_storage : "${var.prefix}-app-${v.name}" => v }
+  app_vol_mount_map = { for v in local.app_storage : v.name => v.mount }
+  app_vol_fs_map    = { for v in local.app_storage : v.name => (v.mount == "swap" ? "swap" : "xfs") }
 }

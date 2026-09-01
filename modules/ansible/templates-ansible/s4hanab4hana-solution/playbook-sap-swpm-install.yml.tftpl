@@ -6,6 +6,36 @@
 #   2.  IMDB_AFL*SAR, IMDB_LCAPPS*.SAR must be absent
 
 ---
+- name: Pre-flight - Clean HANA tenant and redirect backup path
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+
+    - name: Drop stale SWPM users from previous failed runs
+      ansible.builtin.shell: |
+        ssh -o StrictHostKeyChecking=no root@${sap_swpm_db_ip} "
+          su - hdbadm <<'HDBEOF'
+          for user in SAPHANADB SAPABAP1 SWPM20LOADER DBACOCKPIT; do
+            hdbsql -i ${sap_swpm_db_instance_nr} -u SYSTEM -p '${sap_swpm_db_master_password}' -d HDB \
+              \"DROP USER \$user CASCADE\" 2>/dev/null || true
+          done
+HDBEOF
+        "
+      changed_when: false
+
+    - name: Redirect HANA backup path to /hana/log/backup
+      ansible.builtin.shell: |
+        ssh -o StrictHostKeyChecking=no root@${sap_swpm_db_ip} "
+          su - hdbadm <<'HDBEOF'
+          hdbsql -i ${sap_swpm_db_instance_nr} -u SYSTEM -p '${sap_swpm_db_master_password}' -d SYSTEMDB \
+            \"ALTER SYSTEM ALTER CONFIGURATION ('global.ini','SYSTEM') SET ('persistence','basepath_databackup') = '/hana/log/backup' WITH RECONFIGURE\"
+HDBEOF
+          mkdir -p /hana/log/backup
+          chown hdbadm:sapsys /hana/log/backup
+        "
+      changed_when: false
+
 
 - name: Ansible Play for executing SAP SWPM
   hosts: all

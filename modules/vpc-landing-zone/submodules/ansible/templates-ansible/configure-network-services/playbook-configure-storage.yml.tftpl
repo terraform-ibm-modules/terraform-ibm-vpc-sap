@@ -1,0 +1,88 @@
+# ------------------------------------------------------------------------
+# Playbook: configure storage filesystems on SAP Intel VPC VSIs.
+#
+# IBM Cloud VPC API va.device = hypervisor serial (02w7-<uuid>-<tag>).
+# udev creates /dev/disk/by-id/virtio-<truncated-serial> → ../../vdX.
+# We grep for the first unique segment of the serial to find the symlink,
+# then pass the full resolved /dev/vdX path to blivet.
+# ------------------------------------------------------------------------
+
+---
+
+- name: Ansible play to configure storage filesystems on VSI
+  hosts: all
+  become: true
+  vars:
+    storage_config: '${storage_config}'
+
+  pre_tasks:
+
+  - name: Trigger udev to enumerate block devices
+    ansible.builtin.command: udevadm trigger --action=add --subsystem-match=block
+    changed_when: false
+    when: storage_config != "[]" and storage_config != ""
+
+  - name: Wait for udev queue to drain (up to 120s, non-fatal)
+    ansible.builtin.command: udevadm settle --timeout=120
+    changed_when: false
+    failed_when: false
+    when: storage_config != "[]" and storage_config != ""
+
+  - name: Show all /dev/disk/by-id/ virtio entries (diagnostic)
+    ansible.builtin.shell: ls -la /dev/disk/by-id/ 2>&1 | grep -i virtio || echo "NO VIRTIO ENTRIES"
+    register: _virtio_listing
+    changed_when: false
+    when: storage_config != "[]" and storage_config != ""
+
+  - name: Debug virtio listing
+    ansible.builtin.debug:
+      var: _virtio_listing.stdout_lines
+    when: storage_config != "[]" and storage_config != ""
+
+  - name: Resolve each serial to a block device via virtio symlink grep
+    ansible.builtin.shell: |
+      readlink -f $(ls /dev/disk/by-id/ | grep "virtio-{{ item.serial[:20] }}" | head -1 | xargs -I{} echo /dev/disk/by-id/{}) 2>/dev/null || echo "NOT_FOUND"
+    register: _dev_paths
+    loop: "{{ storage_config | from_json }}"
+    loop_control:
+      label: "{{ item.name }}"
+    changed_when: false
+    when: storage_config != "[]" and storage_config != ""
+
+  - name: Fail if any volume could not be resolved
+    ansible.builtin.fail:
+      msg: >
+        Could not find virtio symlink for volume '{{ item.item.name }}'
+        (serial prefix: {{ item.item.serial[:20] }}).
+        Virtio entries present: {{ _virtio_listing.stdout }}
+    loop: "{{ _dev_paths.results | default([]) }}"
+    loop_control:
+      label: "{{ item.item.name }}"
+    when:
+      - storage_config != "[]" and storage_config != ""
+      - item.stdout == "NOT_FOUND" or item.stdout == ""
+
+  - name: Build storage_volumes list for redhat.rhel_system_roles.storage
+    ansible.builtin.set_fact:
+      _storage_volumes: >-
+        {{
+          _storage_volumes | default([]) + [{
+            'name':        item.0.name | replace('-', '_'),
+            'type':        'disk',
+            'disks':       [ item.1.stdout ],
+            'fs_type':     item.0.filesystem,
+            'mount_point': item.0.mount if item.0.filesystem != 'swap' else ''
+          }]
+        }}
+    loop: "{{ (storage_config | from_json) | zip(_dev_paths.results) | list }}"
+    loop_control:
+      label: "{{ item.0.name }}"
+    when: storage_config != "[]" and storage_config != ""
+
+  roles:
+  - role: redhat.rhel_system_roles.storage
+    vars:
+      storage_safe_mode: false
+      storage_udevadm_trigger: true
+      storage_volumes: "{{ _storage_volumes | default([]) }}"
+    when: storage_config != "[]" and storage_config != ""
