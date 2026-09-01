@@ -65,8 +65,8 @@ locals {
   #######################################################################
   hana_memory_gb = tonumber(regex("x([0-9]+)$", var.vsi_hana_db_profile)[0])
 
-  # /hana/data  = 1.2× RAM rounded up to the nearest 100 GB
-  hana_data_gb = ceil(local.hana_memory_gb * 1.2 / 100) * 100
+  # /hana/data  = 1.2× RAM
+  hana_data_gb = ceil(local.hana_memory_gb * 1.2)
   # /hana/log   = fixed 512 GB (SAP minimum)
   hana_log_gb = 512
   # /hana/shared = 1× RAM capped at 1 TB
@@ -94,14 +94,8 @@ locals {
   #######################################################################
   # APP (NetWeaver) volume sizing.
   #######################################################################
-  app_config_provided = length(var.vsi_app_storage_config) > 0 && var.vsi_app_storage_config[0].name != ""
 
-  app_storage_default = [
-    { name = "usr-sap", size = "50", iops = "10iops-tier", mount = "/usr/sap", count = "1" },
-    { name = "swap", size = "30", iops = "10iops-tier", mount = "swap", count = "1" },
-    { name = "sap-mnt", size = "50", iops = "10iops-tier", mount = "/sapmnt", count = "1" },
-  ]
-  app_storage = local.app_config_provided ? var.vsi_app_storage_config : local.app_storage_default
+  app_storage = var.vsi_app_storage_config
   # Keyed map used by for_each in the volume resource — key = "{prefix}-app-{name}"
   app_volume_map    = { for v in local.app_storage : "${var.prefix}-app-${v.name}" => v }
   app_vol_mount_map = { for v in local.app_storage : v.name => v.mount }

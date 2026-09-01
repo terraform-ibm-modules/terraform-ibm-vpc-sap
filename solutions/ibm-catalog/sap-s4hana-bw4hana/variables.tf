@@ -107,13 +107,11 @@ variable "vsi_app_storage_config" {
     iops  = string
     mount = string
   }))
-  default = [{
-    name  = ""
-    size  = ""
-    count = ""
-    iops  = ""
-    mount = ""
-  }]
+  default = [
+    { name = "usr-sap", size = "50", count = "1", iops = "10iops-tier", mount = "/usr/sap" },
+    { name = "swap", size = "30", count = "1", iops = "10iops-tier", mount = "swap" },
+    { name = "sap-mnt", size = "50", count = "1", iops = "10iops-tier", mount = "/sapmnt" },
+  ]
 }
 
 #variable "vsi_app_additional_storage_config" {
