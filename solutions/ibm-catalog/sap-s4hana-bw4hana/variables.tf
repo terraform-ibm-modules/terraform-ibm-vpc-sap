@@ -74,11 +74,11 @@ variable "vsi_hana_db_additional_storage_config" {
     pool  = optional(string)
   }))
   default = [{
-    name  = ""
-    size  = ""
-    count = ""
-    iops  = ""
-    mount = ""
+    name  = "usr-sap"
+    size  = "50"
+    count = "1"
+    iops  = "10iops-tier"
+    mount = "/usr/sap"
   }]
 }
 
@@ -99,7 +99,7 @@ variable "vsi_app_image" {
 }
 
 variable "vsi_app_storage_config" {
-  description = "Custom storage for the APP VSI. Replaces the default layout. Leave as default (empty name) to use the default layout [128 GB /usr/sap, 10 GB swap]. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
+  description = "storage for the APP VSI. Replaces the default layout. Leave as default (empty name) to use the default layout [50 GB /usr/sap, 50 GB /sapmnt]. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
   type = list(object({
     name  = string
     size  = string
@@ -116,23 +116,23 @@ variable "vsi_app_storage_config" {
   }]
 }
 
-variable "vsi_app_additional_storage_config" {
-  description = "Additional block volumes to attach to the APP VSI, appended after the custom or default volumes. Leave as default (empty name) to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
-  type = list(object({
-    name  = string
-    size  = string
-    count = string
-    iops  = string
-    mount = string
-  }))
-  default = [{
-    name  = ""
-    size  = ""
-    count = ""
-    iops  = ""
-    mount = ""
-  }]
-}
+#variable "vsi_app_additional_storage_config" {
+#  description = "Additional block volumes to attach to the APP VSI, appended after the custom or default volumes. Leave as default (empty name) to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
+#  type = list(object({
+#    name  = string
+#    size  = string
+#    count = string
+#    iops  = string
+#    mount = string
+#  }))
+#  default = [{
+#    name  = ""
+#    size  = ""
+#    count = ""
+#    iops  = ""
+#    mount = ""
+#  }]
+#}
 
 
 

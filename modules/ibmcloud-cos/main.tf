@@ -56,15 +56,12 @@ resource "terraform_data" "download_objects" {
 
   ####  Execute shell script to download objects from COS  ####
   provisioner "remote-exec" {
-  inline = [
-    "chmod +x ${local.dst_script_ibmcloud_cos_sh_path}",
-    "nohup ${local.dst_script_ibmcloud_cos_sh_path} -i ${var.ibmcloud_cos_configuration.cos_apikey} > ${local.log_file} 2>&1 &",
-    "echo $! > ${local.dst_files_dir}/cos_download.pid",
-    "for i in $(seq 1 110); do sleep 30; kill -0 $(cat ${local.dst_files_dir}/cos_download.pid) 2>/dev/null || break; done",
-    "grep -q 'FAILED\\|error\\|exit 1' ${local.log_file} && exit 1 || true",
-    "chmod 777 -R ${var.ibmcloud_cos_configuration.download_dir_path}"
-  ]
-}
+    inline = [
+      "chmod +x ${local.dst_script_ibmcloud_cos_sh_path}",
+      "${local.dst_script_ibmcloud_cos_sh_path} -i ${var.ibmcloud_cos_configuration.cos_apikey} &> ${local.log_file} || { exit 1; } ",
+      "chmod 777 -R ${var.ibmcloud_cos_configuration.download_dir_path}"
+    ]
+  }
 
   provisioner "remote-exec" {
     inline = [
