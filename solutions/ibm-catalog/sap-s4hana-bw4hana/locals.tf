@@ -100,4 +100,42 @@ locals {
   app_volume_map    = { for v in local.app_storage : "${var.prefix}-app-${v.name}" => v }
   app_vol_mount_map = { for v in local.app_storage : v.name => v.mount }
   app_vol_fs_map    = { for v in local.app_storage : v.name => (v.mount == "swap" ? "swap" : "xfs") }
+
+  hana_device_map = {
+    for va in module.hana_db.volume_attachments :
+    va.volume_id => va.id
+  }
+  app_device_map = {
+    for va in module.app_server.volume_attachments :
+    va.volume_id => va.id
+  }
+
+  # volume short-name → IBM Cloud volume ID
+  hana_vol_id_map = {
+    for v in module.hana_db.volumes :
+    trimprefix(v.name, "${var.prefix}-hanadb-") => v.id
+  }
+  app_vol_id_map = {
+    for v in module.app_server.volumes :
+    trimprefix(v.name, "${var.prefix}-app-") => v.id
+  }
+
+  # Passed to playbook: name, mount, filesystem, serial
+  # serial = full va.device string used to look up /dev/disk/by-id/virtio-<serial>
+  hana_fs_config = [
+    for v in local.hana_storage : {
+      name       = v.name
+      mount      = v.mount
+      filesystem = v.mount == "swap" ? "swap" : "xfs"
+      serial     = local.hana_device_map[local.hana_vol_id_map[v.name]]
+    }
+  ]
+  app_fs_config = [
+    for v in local.app_storage : {
+      name       = v.name
+      mount      = v.mount
+      filesystem = v.mount == "swap" ? "swap" : "xfs"
+      serial     = local.app_device_map[local.app_vol_id_map[v.name]]
+    }
+  ]
 }

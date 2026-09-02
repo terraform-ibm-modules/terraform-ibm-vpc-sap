@@ -55,11 +55,11 @@ variable "vsi_hana_db_storage_config" {
     pool  = optional(string)
   }))
   default = [{
-    name  = ""
-    size  = ""
-    count = ""
-    iops  = ""
-    mount = ""
+    name : ""
+    size : ""
+    count : ""
+    iops : ""
+    mount : ""
   }]
 }
 
@@ -74,11 +74,11 @@ variable "vsi_hana_db_additional_storage_config" {
     pool  = optional(string)
   }))
   default = [{
-    name  = "usr-sap"
-    size  = "50"
-    count = "1"
-    iops  = "10iops-tier"
-    mount = "/usr/sap"
+    name : "usr-sap"
+    size : "50"
+    count : "1"
+    iops : "10iops-tier"
+    mount : "/usr/sap"
   }]
 }
 
@@ -108,9 +108,9 @@ variable "vsi_app_storage_config" {
     mount = string
   }))
   default = [
-    { name = "usr-sap", size = "50", count = "1", iops = "10iops-tier", mount = "/usr/sap" },
-    { name = "swap", size = "30", count = "1", iops = "10iops-tier", mount = "swap" },
-    { name = "sap-mnt", size = "50", count = "1", iops = "10iops-tier", mount = "/sapmnt" },
+    { name : "usr-sap", size : "50", count : "1", iops : "10iops-tier", mount : "/usr/sap" },
+    { name : "swap", size : "30", count : "1", iops : "10iops-tier", mount : "swap" },
+    { name : "sap-mnt", size : "50", count : "1", iops : "10iops-tier", mount : "/sapmnt" },
   ]
 }
 
@@ -124,11 +124,11 @@ variable "vsi_app_storage_config" {
 #    mount = string
 #  }))
 #  default = [{
-#    name  = ""
-#    size  = ""
-#    count = ""
-#    iops  = ""
-#    mount = ""
+#    name  : ""
+#    size  : ""
+#    count : ""
+#    iops  : ""
+#    mount : ""
 #  }]
 #}
 
