@@ -48,7 +48,8 @@ module "configure_network_services" {
     }),
     "client_config" : jsonencode(
       { "nfs" : local.network_services_config.nfs
-    })
+    }),
+    "storage_config" : jsonencode([])
   }
 
   src_inventory_template_name = "inventory.tftpl"

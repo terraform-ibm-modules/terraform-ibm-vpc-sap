@@ -181,10 +181,12 @@ module "linux_init_hana_db" {
         fstype          = "nfs4"
       }
     })
+    "storage_config" : jsonencode(local.hana_fs_config)
   }
 
   inventory_template_vars = { "host_or_ip" : module.hana_db.instance_ip }
 }
+
 
 #######################################################
 # Configure Network Services on SAP APP (NetWeaver) VSI
@@ -227,105 +229,160 @@ module "linux_init_app_server" {
         fstype          = "nfs4"
       }
     })
+    "storage_config" : jsonencode(local.app_fs_config)
   }
 
   inventory_template_vars = { "host_or_ip" : module.app_server.instance_ip }
 }
 
+#######################################################
+# SAP OS preconfiguration — HANA DB VSI
+#######################################################
+
+module "configure_os_hana_db" {
+  source     = "../../../modules/ansible"
+  depends_on = [module.linux_init_hana_db]
+
+  bastion_host_ip        = module.standard.access_host_or_ip
+  ansible_host_or_ip     = module.standard.ansible_host_or_ip
+  ssh_private_key        = var.ssh_private_key
+  configure_ansible_host = false
+
+  src_script_template_name = "configure-os-for-sap/ansible_exec.sh.tftpl"
+  dst_script_file_name     = "${var.prefix}-hanadb-configure-os.sh"
+
+  src_playbook_template_name = "configure-os-for-sap/playbook-configure-os-for-sap.yml.tftpl"
+  dst_playbook_file_name     = "${var.prefix}-hanadb-configure-os-playbook.yml"
+  playbook_template_vars = {
+    "sap_solution" : "HANA"
+    "sap_domain" : "sap.${var.prefix}.local"
+  }
+
+  src_inventory_template_name = "pi-instance-inventory.tftpl"
+  dst_inventory_file_name     = "${var.prefix}-hanadb-configure-os-inventory"
+  inventory_template_vars     = { "pi_instance_management_ip" : module.hana_db.instance_ip }
+}
+
+#######################################################
+# SAP OS preconfiguration — APP (NetWeaver) VSI
+#######################################################
+
+module "configure_os_app_server" {
+  source     = "../../../modules/ansible"
+  depends_on = [module.linux_init_app_server]
+
+  bastion_host_ip        = module.standard.access_host_or_ip
+  ansible_host_or_ip     = module.standard.ansible_host_or_ip
+  ssh_private_key        = var.ssh_private_key
+  configure_ansible_host = false
+
+  src_script_template_name = "configure-os-for-sap/ansible_exec.sh.tftpl"
+  dst_script_file_name     = "${var.prefix}-app-configure-os.sh"
+
+  src_playbook_template_name = "configure-os-for-sap/playbook-configure-os-for-sap.yml.tftpl"
+  dst_playbook_file_name     = "${var.prefix}-app-configure-os-playbook.yml"
+  playbook_template_vars = {
+    "sap_solution" : "NETWEAVER"
+    "sap_domain" : "sap.${var.prefix}.local"
+  }
+
+  src_inventory_template_name = "pi-instance-inventory.tftpl"
+  dst_inventory_file_name     = "${var.prefix}-app-configure-os-inventory"
+  inventory_template_vars     = { "pi_instance_management_ip" : module.app_server.instance_ip }
+}
 
 # locals {
 #   monitoring_instance = module.standard.monitoring_instance
 # }
 
-
 # #####################################################
 # # Ansible Install HANA DB
 # #####################################################
 
-# locals {
-#   ansible_sap_hana_playbook_vars = merge(var.sap_hana_vars,
-#     {
-#       sap_hana_install_software_directory = "${var.nfs_server_config.mount_path}/${var.ibmcloud_cos_configuration.cos_hana_software_path}",
-#       sap_hana_install_master_password    = var.sap_hana_master_password
-#     }
-#   )
-# }
+locals {
+  ansible_sap_hana_playbook_vars = merge(var.sap_hana_vars,
+    {
+      sap_hana_install_software_directory = "${var.nfs_server_config.mount_path}/${var.ibmcloud_cos_configuration.cos_hana_software_path}",
+      sap_hana_install_master_password    = var.sap_hana_master_password
+    }
+  )
+}
 
-# module "ansible_sap_install_hana" {
+module "ansible_sap_install_hana" {
 
-#   source     = "../../../modules/ansible"
-#   depends_on = [module.ibmcloud_cos_download_hana_binaries, module.sap_system]
+  source     = "../../../modules/ansible"
+  depends_on = [module.ibmcloud_cos_download_hana_binaries, module.configure_os_hana_db]
 
-#   bastion_host_ip        = module.standard.access_host_or_ip
-#   ansible_host_or_ip     = module.standard.ansible_host_or_ip
-#   ssh_private_key        = var.ssh_private_key
-#   configure_ansible_host = false
-#   ansible_vault_password = var.ansible_vault_password
+  bastion_host_ip        = module.standard.access_host_or_ip
+  ansible_host_or_ip     = module.standard.ansible_host_or_ip
+  ssh_private_key        = var.ssh_private_key
+  configure_ansible_host = false
+  ansible_vault_password = var.ansible_vault_password
 
-#   src_script_template_name = "hanadb/install_hana.sh.tftpl"
-#   dst_script_file_name     = "${var.prefix}-${local.powervs_hana_instance.name}_install_hana.sh"
+  src_script_template_name = "hanadb/install_hana.sh.tftpl"
+  dst_script_file_name     = "${var.prefix}-hanadb_install_hana.sh"
 
-#   src_playbook_template_name = "hanadb/playbook-sap-hana-install.yml.tftpl"
-#   dst_playbook_file_name     = "${var.prefix}-${local.powervs_hana_instance.name}-playbook-sap-hana-install.yml"
-#   playbook_template_vars     = local.ansible_sap_hana_playbook_vars
+  src_playbook_template_name = "hanadb/playbook-sap-hana-install.yml.tftpl"
+  dst_playbook_file_name     = "${var.prefix}-hanadb-playbook-sap-hana-install.yml"
+  playbook_template_vars     = local.ansible_sap_hana_playbook_vars
 
-#   src_inventory_template_name = "pi-instance-inventory.tftpl"
-#   dst_inventory_file_name     = "${var.prefix}-${local.powervs_hana_instance.name}-instance-inventory"
-#   inventory_template_vars     = { "pi_instance_management_ip" : module.sap_system.pi_hana_instance_management_ip }
-# }
+  src_inventory_template_name = "pi-instance-inventory.tftpl"
+  dst_inventory_file_name     = "${var.prefix}-hanadb-instance-inventory"
+  inventory_template_vars     = { "pi_instance_management_ip" : module.hana_db.instance_ip }
+}
 
 # ####################################################
 # # Ansible Install NetWeaver solution
 # #####################################################
 
-# locals {
-#   product_catalog_map = {
-#     "s4hana-2020"  = "NW_ABAP_OneHost:S4HANA2020.CORE.HDB.ABAP"
-#     "s4hana-2021"  = "NW_ABAP_OneHost:S4HANA2021.CORE.HDB.ABAP"
-#     "s4hana-2022"  = "NW_ABAP_OneHost:S4HANA2022.CORE.HDB.ABAP"
-#     "s4hana-2023"  = "NW_ABAP_OneHost:S4HANA2023.CORE.HDB.ABAP"
-#     "bw4hana-2021" = "NW_ABAP_OneHost:BW4HANA2021.CORE.HDB.ABAP"
-#   }
+locals {
+  product_catalog_map = {
+    "s4hana-2020"  = "NW_ABAP_OneHost:S4HANA2020.CORE.HDB.ABAP"
+    "s4hana-2021"  = "NW_ABAP_OneHost:S4HANA2021.CORE.HDB.ABAP"
+    "s4hana-2022"  = "NW_ABAP_OneHost:S4HANA2022.CORE.HDB.ABAP"
+    "s4hana-2023"  = "NW_ABAP_OneHost:S4HANA2023.CORE.HDB.ABAP"
+    "bw4hana-2021" = "NW_ABAP_OneHost:BW4HANA2021.CORE.HDB.ABAP"
+  }
 
-#   ansible_sap_solution_playbook_vars = merge(var.sap_solution_vars,
-#     {
-#       sap_swpm_product_catalog_id        = lookup(local.product_catalog_map, var.sap_solution, null)
-#       sap_install_media_detect_directory = "${var.nfs_server_config.mount_path}/${var.ibmcloud_cos_configuration.cos_solution_software_path}"
-#       sap_swpm_mp_stack_file_name        = var.ibmcloud_cos_configuration.cos_swpm_mp_stack_file_name
-#       sap_swpm_master_password           = var.sap_swpm_master_password
-#       sap_swpm_ascs_instance_hostname    = "${var.prefix}-${local.powervs_netweaver_instance.name}-1"
-#       sap_domain                         = var.sap_domain
-#       sap_swpm_db_host                   = "${var.prefix}-${local.powervs_hana_instance.name}"
-#       sap_swpm_db_ip                     = module.sap_system.pi_hana_instance_management_ip
-#       sap_swpm_db_sid                    = var.sap_hana_vars.sap_hana_install_sid
-#       sap_swpm_db_instance_nr            = var.sap_hana_vars.sap_hana_install_number
-#       sap_swpm_db_master_password        = var.sap_hana_master_password
-#     }
-#   )
-# }
+  ansible_sap_solution_playbook_vars = merge(var.sap_solution_vars,
+    {
+      sap_swpm_product_catalog_id        = lookup(local.product_catalog_map, var.sap_solution, null)
+      sap_install_media_detect_directory = "${var.nfs_server_config.mount_path}/${var.ibmcloud_cos_configuration.cos_solution_software_path}"
+      sap_swpm_mp_stack_file_name        = ""
+      sap_swpm_master_password           = var.sap_swpm_master_password
+      sap_swpm_ascs_instance_hostname    = "${var.prefix}-app"
+      sap_domain                         = "sap.${var.prefix}.local"
+      sap_swpm_db_host                   = "${var.prefix}-hanadb"
+      sap_swpm_db_ip                     = module.hana_db.instance_ip
+      sap_swpm_db_sid                    = var.sap_hana_vars.sap_hana_install_sid
+      sap_swpm_db_instance_nr            = var.sap_hana_vars.sap_hana_install_number
+      sap_swpm_db_master_password        = var.sap_hana_master_password
+    }
+  )
+}
 
-# module "ansible_sap_install_solution" {
+module "ansible_sap_install_solution" {
 
-#   source     = "../../../modules/ansible"
-#   depends_on = [module.ibmcloud_cos_download_netweaver_binaries, module.ansible_sap_install_hana]
+  source     = "../../../modules/ansible"
+  depends_on = [module.ibmcloud_cos_download_solution_binaries, module.ansible_sap_install_hana]
 
-#   bastion_host_ip        = module.standard.access_host_or_ip
-#   ansible_host_or_ip     = module.standard.ansible_host_or_ip
-#   ssh_private_key        = var.ssh_private_key
-#   configure_ansible_host = false
-#   ansible_vault_password = var.ansible_vault_password
+  bastion_host_ip        = module.standard.access_host_or_ip
+  ansible_host_or_ip     = module.standard.ansible_host_or_ip
+  ssh_private_key        = var.ssh_private_key
+  configure_ansible_host = false
+  ansible_vault_password = var.ansible_vault_password
 
-#   src_script_template_name = "s4hanab4hana-solution/install_swpm.sh.tftpl"
-#   dst_script_file_name     = "${var.prefix}-${local.powervs_netweaver_instance.name}_install_swpm.sh"
+  src_script_template_name = "s4hanab4hana-solution/install_swpm.sh.tftpl"
+  dst_script_file_name     = "${var.prefix}-app_install_swpm.sh"
 
-#   src_playbook_template_name = "s4hanab4hana-solution/playbook-sap-swpm-install.yml.tftpl"
-#   dst_playbook_file_name     = "${var.prefix}-${local.powervs_netweaver_instance.name}-playbook-sap-swpm-install.yml"
-#   playbook_template_vars     = local.ansible_sap_solution_playbook_vars
+  src_playbook_template_name = "s4hanab4hana-solution/playbook-sap-swpm-install.yml.tftpl"
+  dst_playbook_file_name     = "${var.prefix}-app-playbook-sap-swpm-install.yml"
+  playbook_template_vars     = local.ansible_sap_solution_playbook_vars
 
-#   src_inventory_template_name = "pi-instance-inventory.tftpl"
-#   dst_inventory_file_name     = "${var.prefix}-${local.powervs_netweaver_instance.name}-instance-inventory"
-#   inventory_template_vars     = { "pi_instance_management_ip" : module.sap_system.pi_netweaver_instance_management_ips }
-# }
+  src_inventory_template_name = "pi-instance-inventory.tftpl"
+  dst_inventory_file_name     = "${var.prefix}-app-instance-inventory"
+  inventory_template_vars     = { "pi_instance_management_ip" : module.app_server.instance_ip }
+}
 
 # ####################################################
 # # Ansible Install Monitoring SAP solution

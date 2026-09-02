@@ -65,15 +65,14 @@ locals {
   #######################################################################
   hana_memory_gb = tonumber(regex("x([0-9]+)$", var.vsi_hana_db_profile)[0])
 
-  # /hana/data  = 1× RAM rounded up to the nearest 100 GB
-  hana_data_gb = ceil(local.hana_memory_gb / 100) * 100
+  # /hana/data  = 1.2× RAM
+  hana_data_gb = ceil(local.hana_memory_gb * 1.2)
   # /hana/log   = fixed 512 GB (SAP minimum)
   hana_log_gb = 512
   # /hana/shared = 1× RAM capped at 1 TB
-  hana_shared_gb = min(local.hana_memory_gb, 1024)
-  # /usr/sap and swap are fixed
-  hana_usr_sap_gb = 50
-  hana_swap_gb    = 10
+  hana_shared_gb = 200
+  # swap are fixed
+  hana_swap_gb = 32
 
   # Empty-sentinel check: a single entry with name="" means "use defaults"
   hana_config_provided     = length(var.vsi_hana_db_storage_config) > 0 && var.vsi_hana_db_storage_config[0].name != ""
@@ -83,28 +82,60 @@ locals {
     { name = "hana-data", size = tostring(local.hana_data_gb), iops = "10iops-tier", mount = "/hana/data", count = "1" },
     { name = "hana-log", size = tostring(local.hana_log_gb), iops = "10iops-tier", mount = "/hana/log", count = "1" },
     { name = "hana-shared", size = tostring(local.hana_shared_gb), iops = "5iops-tier", mount = "/hana/shared", count = "1" },
-    { name = "usr-sap", size = tostring(local.hana_usr_sap_gb), iops = "10iops-tier", mount = "/usr/sap", count = "1" },
     { name = "swap", size = tostring(local.hana_swap_gb), iops = "10iops-tier", mount = "swap", count = "1" },
   ]
   # Custom config replaces the default; additional volumes (when non-empty) are always appended.
   hana_storage = concat(local.hana_config_provided ? var.vsi_hana_db_storage_config : local.hana_storage_default, local.hana_additional_provided ? var.vsi_hana_db_additional_storage_config : [])
   # Keyed map used by for_each in the volume resource — key = "{prefix}-{hostname}-{name}"
-  hana_volume_map = { for v in local.hana_storage : "${var.prefix}-hanadb-${v.name}" => v }
+  hana_volume_map    = { for v in local.hana_storage : "${var.prefix}-hanadb-${v.name}" => v }
+  hana_vol_mount_map = { for v in local.hana_storage : v.name => v.mount }
+  hana_vol_fs_map    = { for v in local.hana_storage : v.name => (v.mount == "swap" ? "swap" : "xfs") }
 
   #######################################################################
   # APP (NetWeaver) volume sizing.
-  # A /usr/sap volume plus a swap disk is the default layout for the
-  # application tier.
   #######################################################################
-  app_config_provided     = length(var.vsi_app_storage_config) > 0 && var.vsi_app_storage_config[0].name != ""
-  app_additional_provided = length(var.vsi_app_additional_storage_config) > 0 && var.vsi_app_additional_storage_config[0].name != ""
 
-  app_storage_default = [
-    { name = "usr-sap", size = "128", iops = "10iops-tier", mount = "/usr/sap", count = "1" },
-    { name = "swap", size = "10", iops = "10iops-tier", mount = "swap", count = "1" },
-  ]
-  # Custom config replaces the default; additional volumes (when non-empty) are always appended.
-  app_storage = concat(local.app_config_provided ? var.vsi_app_storage_config : local.app_storage_default, local.app_additional_provided ? var.vsi_app_additional_storage_config : [])
+  app_storage = var.vsi_app_storage_config
   # Keyed map used by for_each in the volume resource — key = "{prefix}-app-{name}"
-  app_volume_map = { for v in local.app_storage : "${var.prefix}-app-${v.name}" => v }
+  app_volume_map    = { for v in local.app_storage : "${var.prefix}-app-${v.name}" => v }
+  app_vol_mount_map = { for v in local.app_storage : v.name => v.mount }
+  app_vol_fs_map    = { for v in local.app_storage : v.name => (v.mount == "swap" ? "swap" : "xfs") }
+
+  hana_device_map = {
+    for va in module.hana_db.volume_attachments :
+    va.volume_id => va.id
+  }
+  app_device_map = {
+    for va in module.app_server.volume_attachments :
+    va.volume_id => va.id
+  }
+
+  # volume short-name → IBM Cloud volume ID
+  hana_vol_id_map = {
+    for v in module.hana_db.volumes :
+    trimprefix(v.name, "${var.prefix}-hanadb-") => v.id
+  }
+  app_vol_id_map = {
+    for v in module.app_server.volumes :
+    trimprefix(v.name, "${var.prefix}-app-") => v.id
+  }
+
+  # Passed to playbook: name, mount, filesystem, serial
+  # serial = full va.device string used to look up /dev/disk/by-id/virtio-<serial>
+  hana_fs_config = [
+    for v in local.hana_storage : {
+      name       = v.name
+      mount      = v.mount
+      filesystem = v.mount == "swap" ? "swap" : "xfs"
+      serial     = local.hana_device_map[local.hana_vol_id_map[v.name]]
+    }
+  ]
+  app_fs_config = [
+    for v in local.app_storage : {
+      name       = v.name
+      mount      = v.mount
+      filesystem = v.mount == "swap" ? "swap" : "xfs"
+      serial     = local.app_device_map[local.app_vol_id_map[v.name]]
+    }
+  ]
 }
