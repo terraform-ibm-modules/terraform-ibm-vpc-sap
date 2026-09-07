@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1900"
+     height="1030"
+     viewBox="0 0 1900 1030"
+     role="img"
+     aria-labelledby="title description">
+
+  <title id="title">
+    Design requirements heat map for SAP S/4HANA and SAP BW/4HANA on IBM Cloud VPC
+  </title>
+
+  <desc id="description">
+    IBM Cloud reference architecture design requirements heat map showing the
+    application, data, compute, storage, networking, security, DevOps,
+    resiliency, and service management capabilities included in the solution.
+  </desc>
+
+  <rect x="0" y="0" width="1900" height="1030" fill="#ffffff"/>
+
+  <style>
+    .label {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 21px;
+      fill: #161616;
+    }
+
+    .row-label {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 20px;
+      fill: #161616;
+    }
+
+    .cell-label {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 20px;
+      fill: #161616;
+    }
+
+    .highlight-label {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      fill: #161616;
+    }
+
+    .header-line {
+      stroke: #b7b7b7;
+      stroke-width: 2;
+    }
+
+    .cell {
+      fill: #ffffff;
+      stroke: #b7b7b7;
+      stroke-width: 2;
+    }
+
+    .highlight {
+      fill: #edf4ff;
+      stroke: #0f62fe;
+      stroke-width: 2;
+    }
+
+    .separator {
+      stroke: #b7b7b7;
+      stroke-width: 2;
+    }
+  </style>
+
+  <!-- Headings -->
+  <text x="30" y="44" class="label" font-weight="700">Aspect</text>
+  <text x="185" y="44" class="label" font-weight="700">Domain</text>
+
+  <line x1="155" y1="0" x2="155" y2="980" class="header-line"/>
+
+  <!-- Application platforms -->
+  <text x="30" y="112" class="row-label">
+    <tspan x="30" dy="0">Application</tspan>
+    <tspan x="30" dy="25">platforms</tspan>
+  </text>
+
+  <rect x="185" y="52" width="230" height="72" class="cell"/>
+  <text x="200" y="95" class="cell-label">Mobile</text>
+
+  <rect x="430" y="52" width="230" height="72" class="cell"/>
+  <text x="445" y="95" class="cell-label">Edge</text>
+
+  <rect x="675" y="52" width="230" height="72" class="cell"/>
+  <text x="690" y="95" class="cell-label">Blockchain</text>
+
+  <rect x="920" y="52" width="230" height="72" class="highlight"/>
+  <text x="940" y="84" class="highlight-label">
+    <tspan x="940" dy="0">Enterprise</tspan>
+    <tspan x="940" dy="25">applications</tspan>
+  </text>
+
+  <!-- Data -->
+  <text x="55" y="188" class="row-label">Data</text>
+
+  <rect x="185" y="136" width="230" height="72" class="highlight"/>
+  <text x="200" y="168" class="highlight-label">
+    <tspan x="200" dy="0">Application</tspan>
+    <tspan x="200" dy="25">integration</tspan>
+  </text>
+
+  <rect x="430" y="136" width="230" height="72" class="cell"/>
+  <text x="445" y="179" class="cell-label">Data Ops</text>
+
+  <rect x="675" y="136" width="230" height="72" class="cell"/>
+  <text x="690" y="179" class="cell-label">Data analytics</text>
+
+  <rect x="920" y="136" width="230" height="72" class="cell"/>
+  <text x="935" y="179" class="cell-label">Data storage</text>
+
+  <rect x="1165" y="136" width="230" height="72" class="cell"/>
+  <text x="1180" y="179" class="cell-label">Business intelligence</text>
+
+  <rect x="1410" y="136" width="270" height="72" class="cell"/>
+  <text x="1425" y="179" class="cell-label">Artificial intelligence</text>
+
+  <!-- Compute -->
+  <text x="35" y="263" class="row-label">Compute</text>
+
+  <rect x="185" y="220" width="230" height="72" class="cell"/>
+  <text x="200" y="263" class="cell-label">Bare metal servers</text>
+
+  <rect x="430" y="220" width="230" height="72" class="highlight"/>
+  <text x="450" y="263" class="highlight-label">Virtual servers</text>
+
+  <rect x="675" y="220" width="230" height="72" class="cell"/>
+  <text x="690" y="263" class="cell-label">Virtualization</text>
+
+  <rect x="920" y="220" width="230" height="72" class="cell"/>
+  <text x="935" y="263" class="cell-label">Containers</text>
+
+  <rect x="1165" y="220" width="230" height="72" class="cell"/>
+  <text x="1180" y="263" class="cell-label">Cloud Foundry</text>
+
+  <rect x="1410" y="220" width="270" height="72" class="cell"/>
+  <text x="1425" y="263" class="cell-label">Serverless</text>
+
+  <!-- Storage -->
+  <text x="35" y="337" class="row-label">Storage</text>
+
+  <rect x="185" y="304" width="230" height="72" class="highlight"/>
+  <text x="200" y="347" class="highlight-label">Primary storage</text>
+
+  <rect x="430" y="304" width="230" height="72" class="cell"/>
+  <text x="445" y="347" class="cell-label">Backup</text>
+
+  <rect x="675" y="304" width="230" height="72" class="highlight"/>
+  <text x="695" y="347" class="highlight-label">Archive</text>
+
+  <rect x="920" y="304" width="230" height="72" class="cell"/>
+  <text x="935" y="347" class="cell-label">Data migration</text>
+
+  <!-- Networking -->
+  <text x="35" y="420" class="row-label">Networking</text>
+
+  <rect x="185" y="388" width="230" height="72" class="highlight"/>
+  <text x="200" y="420" class="highlight-label">
+    <tspan x="200" dy="0">Enterprise</tspan>
+    <tspan x="200" dy="25">connectivity</tspan>
+  </text>
+
+  <rect x="430" y="388" width="230" height="72" class="cell"/>
+  <text x="445" y="431" class="cell-label">BYOIP/Edge gateways</text>
+
+  <rect x="675" y="388" width="230" height="72" class="highlight"/>
+  <text x="695" y="431" class="highlight-label">Load balancing</text>
+
+  <rect x="920" y="388" width="230" height="72" class="highlight"/>
+  <text x="940" y="420" class="highlight-label">
+    <tspan x="940" dy="0">Cloud native</tspan>
+    <tspan x="940" dy="25">connectivity</tspan>
+  </text>
+
+  <rect x="1165" y="388" width="230" height="72" class="highlight"/>
+  <text x="1190" y="431" class="highlight-label">Isolation</text>
+
+  <rect x="1410" y="388" width="270" height="72" class="cell"/>
+  <text x="1425" y="431" class="cell-label">Content delivery network</text>
+
+  <rect x="1695" y="388" width="180" height="72" class="cell"/>
+  <text x="1710" y="431" class="cell-label">Domain name service</text>
+
+  <!-- Security -->
+  <text x="35" y="495" class="row-label">Security</text>
+
+  <rect x="185" y="472" width="230" height="72" class="highlight"/>
+  <text x="205" y="515" class="highlight-label">Data security</text>
+
+  <rect x="430" y="472" width="230" height="72" class="highlight"/>
+  <text x="450" y="515" class="highlight-label">Identity &amp; access</text>
+
+  <rect x="675" y="472" width="230" height="72" class="highlight"/>
+  <text x="695" y="515" class="highlight-label">Application security</text>
+
+  <rect x="920" y="472" width="230" height="72" class="highlight"/>
+  <text x="940" y="504" class="highlight-label">
+    <tspan x="940" dy="0">Infrastructure &amp;</tspan>
+    <tspan x="940" dy="25">endpoints</tspan>
+  </text>
+
+  <rect x="1165" y="472" width="230" height="72" class="highlight"/>
+  <text x="1185" y="504" class="highlight-label">
+    <tspan x="1185" dy="0">Threat detection &amp;</tspan>
+    <tspan x="1185" dy="25">response</tspan>
+  </text>
+
+  <rect x="1410" y="472" width="270" height="72" class="cell"/>
+  <text x="1425" y="504" class="cell-label">
+    <tspan x="1425" dy="0">Governance, risk &amp;</tspan>
+    <tspan x="1425" dy="25">compliance</tspan>
+  </text>
+
+  <!-- DevOps -->
+  <text x="35" y="594" class="row-label">DevOps</text>
+
+  <rect x="185" y="568" width="230" height="72" class="cell"/>
+  <text x="200" y="611" class="cell-label">Build &amp; test</text>
+
+  <rect x="430" y="568" width="230" height="72" class="cell"/>
+  <text x="445" y="611" class="cell-label">Delivery pipeline</text>
+
+  <rect x="675" y="568" width="230" height="72" class="cell"/>
+  <text x="690" y="611" class="cell-label">Code repository</text>
+
+  <!-- Resiliency -->
+  <text x="35" y="691" class="row-label">Resiliency</text>
+
+  <rect x="185" y="664" width="230" height="72" class="cell"/>
+  <text x="200" y="707" class="cell-label">Backup &amp; restore</text>
+
+  <rect x="430" y="664" width="230" height="72" class="cell"/>
+  <text x="445" y="707" class="cell-label">Disaster recovery</text>
+
+  <rect x="675" y="664" width="230" height="72" class="cell"/>
+  <text x="690" y="707" class="cell-label">High availability</text>
+
+  <!-- Service management -->
+  <text x="30" y="790" class="row-label">
+    <tspan x="30" dy="0">Service</tspan>
+    <tspan x="30" dy="25">management</tspan>
+  </text>
+
+  <rect x="185" y="760" width="230" height="72" class="highlight"/>
+  <text x="205" y="803" class="highlight-label">Monitoring</text>
+
+  <rect x="430" y="760" width="230" height="72" class="highlight"/>
+  <text x="450" y="803" class="highlight-label">Logging</text>
+
+  <rect x="675" y="760" width="230" height="72" class="highlight"/>
+  <text x="695" y="803" class="highlight-label">Auditing/tracking</text>
+
+  <rect x="920" y="760" width="230" height="72" class="cell"/>
+  <text x="935" y="803" class="cell-label">Alerting</text>
+
+  <rect x="1165" y="760" width="230" height="72" class="cell"/>
+  <text x="1180" y="803" class="cell-label">Event management</text>
+
+  <rect x="1410" y="760" width="270" height="72" class="highlight"/>
+  <text x="1430" y="803" class="highlight-label">Automated deployment</text>
+
+  <rect x="1695" y="760" width="180" height="72" class="cell"/>
+  <text x="1710" y="792" class="cell-label">
+    <tspan x="1710" dy="0">Management/</tspan>
+    <tspan x="1710" dy="25">orchestration</tspan>
+  </text>
+
+  <!-- Bottom separator -->
+  <line x1="0" y1="870" x2="1880" y2="870" class="separator"/>
+
+  <!-- Legend -->
+  <rect x="185" y="900" width="28" height="28" class="highlight"/>
+  <text x="230" y="922" class="label">Included in this architecture</text>
+
+  <text x="185" y="970" class="label">
+    Highlighted capabilities are provided by the VPC landing zone, SAP VSIs,
+    network services, storage, monitoring, security, and deployment automation.
+  </text>
+
+  <text x="185" y="1002" class="label">
+    The default deployment is single-zone and does not provide native high availability or disaster recovery.
+  </text>
+
+</svg>

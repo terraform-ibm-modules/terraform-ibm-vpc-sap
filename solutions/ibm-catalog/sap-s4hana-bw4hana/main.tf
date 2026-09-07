@@ -103,8 +103,8 @@ module "hana_db" {
   providers = { ibm.ibm-is = ibm.ibm-is }
 
   name              = "${var.prefix}-hanadb"
-  profile           = var.vsi_hana_db_profile
-  image             = var.vsi_hana_db_image
+  profile           = var.vpc_hana_instance_sap_profile_id
+  image             = var.vpc_hana_instance_image
   vpc_id            = local.vpc_id
   zone              = var.vpc_zone
   resource_group_id = local.resource_group_id
@@ -127,8 +127,8 @@ module "app_server" {
   providers = { ibm.ibm-is = ibm.ibm-is }
 
   name              = "${var.prefix}-app"
-  profile           = var.vsi_app_profile
-  image             = var.vsi_app_image
+  profile           = var.vpc_app_instance_profile_id
+  image             = var.vpc_app_instance_image
   vpc_id            = local.vpc_id
   zone              = var.vpc_zone
   resource_group_id = local.resource_group_id
@@ -255,7 +255,7 @@ module "configure_os_hana_db" {
   dst_playbook_file_name     = "${var.prefix}-hanadb-configure-os-playbook.yml"
   playbook_template_vars = {
     "sap_solution" : "HANA"
-    "sap_domain" : "sap.${var.prefix}.local"
+    "sap_domain" : var.sap_domain
   }
 
   src_inventory_template_name = "pi-instance-inventory.tftpl"
@@ -283,7 +283,7 @@ module "configure_os_app_server" {
   dst_playbook_file_name     = "${var.prefix}-app-configure-os-playbook.yml"
   playbook_template_vars = {
     "sap_solution" : "NETWEAVER"
-    "sap_domain" : "sap.${var.prefix}.local"
+    "sap_domain" : var.sap_domain
   }
 
   src_inventory_template_name = "pi-instance-inventory.tftpl"
@@ -351,7 +351,7 @@ locals {
       sap_swpm_mp_stack_file_name        = ""
       sap_swpm_master_password           = var.sap_swpm_master_password
       sap_swpm_ascs_instance_hostname    = "${var.prefix}-app"
-      sap_domain                         = "sap.${var.prefix}.local"
+      sap_domain                         = var.sap_domain
       sap_swpm_db_host                   = "${var.prefix}-hanadb"
       sap_swpm_db_ip                     = module.hana_db.instance_ip
       sap_swpm_db_sid                    = var.sap_hana_vars.sap_hana_install_sid

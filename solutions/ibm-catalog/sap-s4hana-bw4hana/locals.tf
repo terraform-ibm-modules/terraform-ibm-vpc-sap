@@ -63,7 +63,7 @@ locals {
   # HANA DB volume sizing — derived from profile name.
   # Profile format: <family>-<vcpus>x<memory_GB>  e.g. "mx2-16x128"
   #######################################################################
-  hana_memory_gb = tonumber(regex("x([0-9]+)$", var.vsi_hana_db_profile)[0])
+  hana_memory_gb = tonumber(regex("x([0-9]+)$", var.vpc_hana_instance_sap_profile_id)[0])
 
   # /hana/data  = 1.2× RAM
   hana_data_gb = ceil(local.hana_memory_gb * 1.2)
@@ -75,8 +75,8 @@ locals {
   hana_swap_gb = 32
 
   # Empty-sentinel check: a single entry with name="" means "use defaults"
-  hana_config_provided     = length(var.vsi_hana_db_storage_config) > 0 && var.vsi_hana_db_storage_config[0].name != ""
-  hana_additional_provided = length(var.vsi_hana_db_additional_storage_config) > 0 && var.vsi_hana_db_additional_storage_config[0].name != ""
+  hana_config_provided     = length(var.vpc_hana_instance_custom_storage_config) > 0 && var.vpc_hana_instance_custom_storage_config[0].name != ""
+  hana_additional_provided = length(var.vpc_hana_instance_additional_storage_config) > 0 && var.vpc_hana_instance_additional_storage_config[0].name != ""
 
   hana_storage_default = [
     { name = "hana-data", size = tostring(local.hana_data_gb), iops = "10iops-tier", mount = "/hana/data", count = "1" },
@@ -85,21 +85,21 @@ locals {
     { name = "swap", size = tostring(local.hana_swap_gb), iops = "10iops-tier", mount = "swap", count = "1" },
   ]
   # Custom config replaces the default; additional volumes (when non-empty) are always appended.
-  hana_storage = concat(local.hana_config_provided ? var.vsi_hana_db_storage_config : local.hana_storage_default, local.hana_additional_provided ? var.vsi_hana_db_additional_storage_config : [])
+  hana_storage = concat(local.hana_config_provided ? var.vpc_hana_instance_custom_storage_config : local.hana_storage_default, local.hana_additional_provided ? var.vpc_hana_instance_additional_storage_config : [])
   # Keyed map used by for_each in the volume resource — key = "{prefix}-{hostname}-{name}"
-  hana_volume_map    = { for v in local.hana_storage : "${var.prefix}-hanadb-${v.name}" => v }
-  hana_vol_mount_map = { for v in local.hana_storage : v.name => v.mount }
-  hana_vol_fs_map    = { for v in local.hana_storage : v.name => (v.mount == "swap" ? "swap" : "xfs") }
+  hana_volume_map = { for v in local.hana_storage : "${var.prefix}-hanadb-${v.name}" => v }
+  #hana_vol_mount_map = { for v in local.hana_storage : v.name => v.mount }
+  #hana_vol_fs_map    = { for v in local.hana_storage : v.name => (v.mount == "swap" ? "swap" : "xfs") }
 
   #######################################################################
   # APP (NetWeaver) volume sizing.
   #######################################################################
 
-  app_storage = var.vsi_app_storage_config
+  app_storage = var.vpc_app_instance_storage_config
   # Keyed map used by for_each in the volume resource — key = "{prefix}-app-{name}"
-  app_volume_map    = { for v in local.app_storage : "${var.prefix}-app-${v.name}" => v }
-  app_vol_mount_map = { for v in local.app_storage : v.name => v.mount }
-  app_vol_fs_map    = { for v in local.app_storage : v.name => (v.mount == "swap" ? "swap" : "xfs") }
+  app_volume_map = { for v in local.app_storage : "${var.prefix}-app-${v.name}" => v }
+  #app_vol_mount_map = { for v in local.app_storage : v.name => v.mount }
+  #app_vol_fs_map    = { for v in local.app_storage : v.name => (v.mount == "swap" ? "swap" : "xfs") }
 
   hana_device_map = {
     for va in module.hana_db.volume_attachments :

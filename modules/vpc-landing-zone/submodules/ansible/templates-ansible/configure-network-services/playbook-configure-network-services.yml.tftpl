@@ -15,7 +15,7 @@
     client_config: ${client_config}
     storage_config: '${storage_config}'
 
-  tasks:
+  pre_tasks:
 
   - name: Configure storage filesystems
     when: storage_config != "[]" and storage_config != ""

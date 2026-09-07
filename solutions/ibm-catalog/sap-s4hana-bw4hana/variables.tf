@@ -5,21 +5,21 @@ variable "ibmcloud_api_key" {
 }
 
 variable "vpc_zone" {
-  description = "IBM Cloud data center location where VPC resources will be created."
+  description = "IBM Cloud VPC Zone location where VPC resources will be created."
   type        = string
 }
 
 variable "prefix" {
-  description = "Unique prefix for resources to be created (e.g., SAP system name). Must be an alphanumeric string with maximum length of 8 characters."
+  description = "Unique prefix for resources to be created (e.g., SAP system name). Must be an lowercase alphanumeric characters and hyphens with maximum length of 7 characters."
   type        = string
   validation {
     condition = (
       var.prefix != null &&
       var.prefix != "" &&
-      length(var.prefix) <= 8 &&
+      length(var.prefix) <= 7 &&
       can(regex("^[a-z0-9-]+$", var.prefix))
     )
-    error_message = "Prefix must be up to 8 characters long and may include lowercase letters, numbers, and hyphens only."
+    error_message = "Prefix must be up to 7 characters long and may include lowercase letters, numbers, and hyphens only."
   }
 }
 
@@ -29,23 +29,23 @@ variable "external_access_ip" {
 }
 
 #####################################################
-# SAP HANA DB VSI parameters
+# VPC HANA Instance parameters
 #####################################################
 
-variable "vsi_hana_db_profile" {
-  description = "VPC instance profile for the SAP HANA DB VSI. Must be a HANA-certified mx2, vx2d, or ux2d profile. The memory encoded in the profile name (e.g. mx2-16x128 → 128 GB) is used to auto-calculate volume sizes."
+variable "vpc_hana_instance_sap_profile_id" {
+  description = "VPC instance profile for the VPC SAP HANA instance. Must be a HANA-certified mx2, vx2d, or ux2d profile. The memory encoded in the profile name (e.g. mx2-16x128 → 128 GB) is used to auto-calculate volume sizes."
   type        = string
   default     = "mx2-16x128"
 }
 
-variable "vsi_hana_db_image" {
+variable "vpc_hana_instance_image" {
   description = "OS image name for the SAP HANA DB VSI. Must be an SAP HANA certified RHEL or SLES image."
   type        = string
   default     = "ibm-redhat-9-6-amd64-sap-hana-10"
 }
 
-variable "vsi_hana_db_storage_config" {
-  description = "Custom storage for the HANA DB VSI. Replaces the entire auto-calculated layout. Leave as default (empty name) to use auto-calculated volumes for hana/data, hana/log, hana/shared, usr/sap and swap from the profile memory. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
+variable "vpc_hana_instance_custom_storage_config" {
+  description = "Custom storage for the HANA DB VSI. Replaces the entire auto-calculated layout. Leave as default (empty name) to use auto-calculated volumes for hana/data, hana/log, hana/shared, and swap from the profile memory. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
   type = list(object({
     name  = string
     size  = string
@@ -63,8 +63,8 @@ variable "vsi_hana_db_storage_config" {
   }]
 }
 
-variable "vsi_hana_db_additional_storage_config" {
-  description = "Additional block volumes to attach to the HANA DB VSI, appended after the custom or auto-calculated volumes. Useful for extra file systems such as backup or archive mounts. Leave as default (empty name) to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
+variable "vpc_hana_instance_additional_storage_config" {
+  description = "Additional block volumes to attach to the HANA DB VSI, appended after the custom or auto-calculated volumes. Useful for extra file systems such as backup or archive mounts. Leave as default to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
   type = list(object({
     name  = string
     size  = string
@@ -86,19 +86,19 @@ variable "vsi_hana_db_additional_storage_config" {
 # SAP APP (NetWeaver) VSI parameters
 #####################################################
 
-variable "vsi_app_profile" {
+variable "vpc_app_instance_profile_id" {
   description = "VPC instance profile for the SAP Application VSI."
   type        = string
   default     = "bx2-4x16"
 }
 
-variable "vsi_app_image" {
+variable "vpc_app_instance_image" {
   description = "OS image name for the SAP Application VSI. Must be an SAP Applications certified RHEL or SLES image."
   type        = string
   default     = "ibm-redhat-9-6-amd64-sap-applications-10"
 }
 
-variable "vsi_app_storage_config" {
+variable "vpc_app_instance_storage_config" {
   description = "storage for the APP VSI. Replaces the default layout. Leave as default (empty name) to use the default layout [50 GB /usr/sap, 50 GB /sapmnt]. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
   type = list(object({
     name  = string
@@ -114,7 +114,7 @@ variable "vsi_app_storage_config" {
   ]
 }
 
-#variable "vsi_app_additional_storage_config" {
+#variable "vpc_app_instance_additional_storage_config" {
 #  description = "Additional block volumes to attach to the APP VSI, appended after the custom or default volumes. Leave as default (empty name) to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
 #  type = list(object({
 #    name  = string
@@ -145,13 +145,14 @@ variable "ssh_public_key" {
 }
 
 variable "ssh_private_key" {
-  description = "Private SSH key (RSA format) used to login to IBM PowerVS instances. Should match to uploaded public SSH key referenced by 'ssh_public_key' which was created previously. The key is temporarily stored and deleted. For more information about SSH keys, see [SSH keys](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
+  description = "Private SSH key (RSA format) used to login to IBM VPC instances. Should match to uploaded public SSH key referenced by 'ssh_public_key' which was created previously. The key is temporarily stored and deleted. For more information about SSH keys, see [SSH keys](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
   type        = string
   sensitive   = true
 }
 
 variable "nfs_server_config" {
-  description = "Configuration for the NFS server. 'size' is in GB, 'iops' is maximum input/output operation performance bandwidth per second, 'mount_path' defines the target mount point on os. Set 'configure_nfs_server' to false to ignore creating file storage share."
+  description = "Configuration for the NFS server. 'size' is in GB, 'iops' is maximum input/output operation performance bandwidth per second, 'mount_path' defines the target mount point on os."
+
   type = object({
     size       = number
     iops       = number
@@ -186,12 +187,18 @@ variable "vpc_landing_zone_images" {
 # #####################################################
 
 variable "sap_solution" {
-  description = "SAP Solution to be installed on Power Virtual Server."
+  description = "SAP Solution to be installed on VPC instances."
   type        = string
   validation {
     condition     = contains(["s4hana-2023", "s4hana-2022", "s4hana-2021", "s4hana-2020", "bw4hana-2021"], var.sap_solution) ? true : false
     error_message = "Solution value has to be one of 's4hana-2023', 's4hana-2022', 's4hana-2021', 's4hana-2020', 'bw4hana-2021'"
   }
+}
+
+variable "sap_domain" {
+  description = "SAP domain name used across HANA and NetWeaver configurations."
+  type        = string
+  default     = "sap.com"
 }
 
 variable "ibmcloud_cos_configuration" {
@@ -267,7 +274,7 @@ variable "sap_swpm_master_password" {
 }
 
 variable "sap_solution_vars" {
-  description = "SAP SID, ASCS and PAS instance numbers and service/protectedwebmethods parameters."
+  description = "SAP SID, ASCS and PAS instance numbers, and the SWPM service web methods protection list."
   type = object({
     sap_swpm_sid                         = string
     sap_swpm_ascs_instance_nr            = string
@@ -357,7 +364,7 @@ variable "enable_monitoring" {
 #################################################
 
 variable "enable_scc_wp" {
-  description = "Set to true to enable SCC Workload Protection and install and configure the SCC Workload Protection agent on all VSIs and PowerVS instances in this deployment."
+  description = "Set to true to enable SCC Workload Protection and install and configure the SCC Workload Protection agent on all VSIs in this deployment."
   type        = bool
 }
 
@@ -394,10 +401,10 @@ variable "vpc_subnet_cidrs" {
     edge = string
   })
   default = {
-    "vpn"  = "10.30.10.0/24"
-    "mgmt" = "10.30.20.0/24"
-    "vpe"  = "10.30.30.0/24"
-    "edge" = "10.30.40.0/24"
+    "vpn" : "10.30.10.0/24"
+    "mgmt" : "10.30.20.0/24"
+    "vpe" : "10.30.30.0/24"
+    "edge" : "10.30.40.0/24"
   }
 }
 
