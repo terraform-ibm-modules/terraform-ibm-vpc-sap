@@ -1,7 +1,6 @@
 #######################################################
 # Power Virtual Server with VPC landing zone module
 # VPC landing zone
-# PowerVS Workspace
 #######################################################
 
 module "standard" {

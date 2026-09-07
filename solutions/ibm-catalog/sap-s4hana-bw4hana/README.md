@@ -27,7 +27,6 @@
   - Optional VSI for Monitoring host
   - Optional [Client-to-Site VPN server](https://cloud.ibm.com/docs/vpc?topic=vpc-vpn-client-to-site-overview)
   - [File storage share (NFS)](https://cloud.ibm.com/docs/vpc?topic=vpc-file-storage-create&interface=ui) for SAP installation binaries and shared directories
-  - Optional [Network load balancer](https://cloud.ibm.com/docs/vpc?group=network-load-balancer)
   - Optional [IBM Cloud Security and Compliance Center Workload Protection](https://cloud.ibm.com/docs/workload-protection) (Sysdig agent configured on all VSIs)
   - IBM Cloud Object Storage (COS) Virtual Private Endpoint gateway (VPE)
   - IBM Cloud Object Storage (COS) instance and buckets (for Activity Tracker & binaries)
@@ -157,7 +156,7 @@
 | <a name="input_vpc_hana_instance_image"></a> [vpc\_hana\_instance\_image](#input\_vpc\_hana\_instance\_image) | OS image name for the SAP HANA DB VSI. Must be an SAP HANA certified RHEL or SLES image. | `string` | `"ibm-redhat-9-6-amd64-sap-hana-10"` | no |
 | <a name="input_vpc_hana_instance_sap_profile_id"></a> [vpc\_hana\_instance\_sap\_profile\_id](#input\_vpc\_hana\_instance\_sap\_profile\_id) | VPC instance profile for the VPC SAP HANA instance. Must be a HANA-certified mx2, vx2d, or ux2d profile. The memory encoded in the profile name (e.g. mx2-16x128 → 128 GB) is used to auto-calculate volume sizes. | `string` | `"mx2-16x128"` | no |
 | <a name="input_vpc_landing_zone_images"></a> [vpc\_landing\_zone\_images](#input\_vpc\_landing\_zone\_images) | Stock OS image names for creating VPC landing zone VSI instances: RHEL (management and network services) and SLES (monitoring). | <pre>object({<br/>    rhel_image = string<br/>    sles_image = string<br/>  })</pre> | <pre>{<br/>  "rhel_image": "ibm-redhat-9-6-amd64-sap-applications-1",<br/>  "sles_image": "ibm-sles-15-7-amd64-sap-applications-1"<br/>}</pre> | no |
-| <a name="input_vpc_subnet_cidrs"></a> [vpc\_subnet\_cidrs](#input\_vpc\_subnet\_cidrs) | CIDR values for the VPC subnets to be created. It's customer responsibility that none of the defined networks collide, including the PowerVS subnets and VPN client pool. | <pre>object({<br/>    vpn  = string<br/>    mgmt = string<br/>    vpe  = string<br/>    edge = string<br/>  })</pre> | <pre>{<br/>  "edge": "10.30.40.0/24",<br/>  "mgmt": "10.30.20.0/24",<br/>  "vpe": "10.30.30.0/24",<br/>  "vpn": "10.30.10.0/24"<br/>}</pre> | no |
+| <a name="input_vpc_subnet_cidrs"></a> [vpc\_subnet\_cidrs](#input\_vpc\_subnet\_cidrs) | CIDR values for the VPC subnets to be created. It's customer responsibility that none of the defined networks collide, including VPN client pool. | <pre>object({<br/>    vpn  = string<br/>    mgmt = string<br/>    vpe  = string<br/>    edge = string<br/>  })</pre> | <pre>{<br/>  "edge": "10.30.40.0/24",<br/>  "mgmt": "10.30.20.0/24",<br/>  "vpe": "10.30.30.0/24",<br/>  "vpn": "10.30.10.0/24"<br/>}</pre> | no |
 | <a name="input_vpc_zone"></a> [vpc\_zone](#input\_vpc\_zone) | IBM Cloud VPC Zone location where VPC resources will be created. | `string` | n/a | yes |
 
 ### Outputs
