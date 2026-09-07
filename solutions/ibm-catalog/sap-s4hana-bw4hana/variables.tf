@@ -114,27 +114,6 @@ variable "vpc_app_instance_storage_config" {
   ]
 }
 
-#variable "vpc_app_instance_additional_storage_config" {
-#  description = "Additional block volumes to attach to the APP VSI, appended after the custom or default volumes. Leave as default (empty name) to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS."
-#  type = list(object({
-#    name  = string
-#    size  = string
-#    count = string
-#    iops  = string
-#    mount = string
-#  }))
-#  default = [{
-#    name  : ""
-#    size  : ""
-#    count : ""
-#    iops  : ""
-#    mount : ""
-#  }]
-#}
-
-
-
-
 #####################################################
 # OS parameters
 #####################################################
@@ -177,7 +156,7 @@ variable "vpc_landing_zone_images" {
     sles_image = string
   })
   default = {
-    "rhel_image" : "ibm-redhat-9-6-amd64-sap-applications-1"
+    "rhel_image" : "ibm-redhat-9-6-amd64-sap-applications-10"
     "sles_image" : "ibm-sles-15-7-amd64-sap-applications-1"
   }
 }
@@ -393,7 +372,7 @@ variable "tags" {
 #####################################################
 
 variable "vpc_subnet_cidrs" {
-  description = "CIDR values for the VPC subnets to be created. It's customer responsibility that none of the defined networks collide, including the PowerVS subnets and VPN client pool."
+  description = "CIDR values for the VPC subnets to be created. It's customer responsibility that none of the defined networks collide, including VPN client pool."
   type = object({
     vpn  = string
     mgmt = string

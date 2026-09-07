@@ -5,7 +5,7 @@ variable "access_host_or_ip" {
 }
 
 variable "target_server_ip" {
-  description = "Private IP of PowerVS instance reachable from the access host."
+  description = "Private IP of VSI instance reachable from the access host."
   type        = string
 }
 
