@@ -1,7 +1,7 @@
 {
   "products": [
     {
-      "label": "SAP HANA with SAP S/4HANA or SAP BW/4HANA on VPC",
+      "label": "SAP solutions on VPC",
       "name": "deploy-arch-ibm-sap-vpc-automation-hana-nw-abap",
       "product_kind": "solution",
       "tags": [
@@ -19,9 +19,9 @@
         "VPC"
       ],
       "short_description": "Deploy SAP HANA with SAP S/4HANA or SAP BW/4HANA on IBM Cloud Virtual Private Cloud (VPC).",
-      "long_description": "This automation solution deploys an SAP landscape consisting of SAP HANA DB and SAP NetWeaver running SAP S/4HANA or SAP BW/4HANA on IBM Cloud Virtual Private Cloud (VPC).\n\nThe solution creates a VPC landing zone, a SAP HANA database virtual server instance, and a SAP application virtual server instance hosting SAP NetWeaver PAS and ASCS. It configures DNS, NTP, NFS storage, and downloads SAP installation media from an existing IBM Cloud Object Storage bucket.\n\nSupported SAP solutions are S/4HANA 2023, S/4HANA 2022, S/4HANA 2021, S/4HANA 2020, and BW/4HANA 2021.\n\nPrerequisites:\n\nAn existing IBM Cloud Object Storage bucket must contain the required SAP HANA and SAP solution installation media. IBM Cloud Object Storage service credentials, an RSA SSH key pair, and an external IP address or CIDR range for SSH access are required.\n\nNote:\n\nThe default deployment is in a single VPC zone and does not provide native high availability or disaster recovery.",
+      "long_description": "This deployable architecture is designed to assist you in deploying SAP ERP software landscapes into IBM Cloud on the IBM Virtual Private Cloud infrastructure.\n\nSAP on Virtual Private Cloud creates and prepares Virtual Server instances for SAP HANA and SAP NetWeaver workloads. After deployment completes, you may (depending on the framework you chose) begin installing SAP on the configured instances or login to your newly created SAP instances directly.",
       "offering_docs_url": "https://github.com/terraform-ibm-modules/terraform-ibm-vpc-sap/tree/main/solutions/ibm-catalog/sap-s4hana-bw4hana",
-      "offering_icon_url": "https://raw.githubusercontent.com/IBM-Cloud/sap-netweaver-abap-hana/main/SAP_GlobalPartner.png",
+      "offering_icon_url": "https://raw.githubusercontent.com/terraform-ibm-modules/terraform-ibm-vpc-sap/main/reference-architectures/catalog-logo-sap-on-vpc.svg",
       "features": [
         {
           "title": "SAP S/4HANA and SAP BW/4HANA",
@@ -38,465 +38,417 @@
         {
           "title": "Automated SAP installation",
           "description": "Downloads SAP media from IBM Cloud Object Storage and automates SAP HANA and SAP software installation."
-        },
-        {
-          "title": "High availability notice",
-          "description": "The default deployment is single-zone and does not provide native high availability or disaster recovery."
         }
       ],
       "flavors": [
         {
-          "label": "Standard",
-          "name": "standard",
+          "label": "SAP S/4HANA or BW/4HANA",
+          "name": "sap-s4hana-bw4hana",
+          "install_type": "fullstack",
           "index": 0,
           "working_directory": "solutions/ibm-catalog/sap-s4hana-bw4hana",
           "short_description": "Deploy SAP S/4HANA or BW/4HANA on VPC Landing Zone",
-          "licenses": [
-            {
-              "id": "LICENSE",
-              "name": "MIT",
-              "type": "text/plain",
-              "url": "https://raw.githubusercontent.com/terraform-ibm-modules/terraform-ibm-vpc-sap/main/LICENSE",
-              "description": "MIT License"
-            }
-          ],
-          "iam_permissions": [],
-          "architecture": {
-            "features": [],
-            "diagrams": [
-              {
-                "diagram": {
-                  "url": "https://raw.githubusercontent.com/terraform-ibm-modules/terraform-ibm-vpc-sap/main/reference-architectures/sap-s4hana-bw4hana/deploy-arch-ibm-vpc-sap-s4hana-bw4hana.svg",
-                  "caption": "SAP HANA with SAP S/4HANA or SAP BW/4HANA on IBM Cloud VPC",
-                  "type": "image/svg+xml",
-                  "thumbnail_url": "https://raw.githubusercontent.com/terraform-ibm-modules/terraform-ibm-vpc-sap/main/reference-architectures/sap-s4hana-bw4hana/deploy-arch-ibm-vpc-sap-s4hana-bw4hana.svg"
-                },
-                "description": "The solution creates an IBM Cloud VPC landing zone, SAP HANA database VSI, and SAP NetWeaver application VSI for SAP S/4HANA or SAP BW/4HANA."
-              }
-            ]
+          "schematics_env_values": {
+            "value": "[{\"name\": \"API_DATA_IS_SENSITIVE\",\"value\": \"true\",\"secure\": false,\"hidden\": true}]"
           },
-          "release_notes_url": "",
           "configuration": [
-            {
-              "key": "ibmcloud_api_key",
-              "type": "password",
-              "description": "IBM Cloud platform API key needed to deploy IAM-enabled resources.",
-              "required": true,
-              "virtual": false
-            },
             {
               "key": "vpc_zone",
               "type": "string",
               "default_value": "__NOT_SET__",
-              "description": "IBM Cloud VPC zone where resources are created.",
-              "required": true,
-              "virtual": false
+              "required": true
             },
             {
               "key": "prefix",
               "type": "string",
               "default_value": "__NOT_SET__",
-              "description": "Unique resource prefix. It must have at most seven lowercase alphanumeric characters or hyphens.",
-              "required": true,
-              "virtual": false
-            },
-            {
-              "key": "external_access_ip",
-              "type": "string",
-              "default_value": "__NOT_SET__",
-              "description": "IP address or CIDR range allowed to access the deployed environment through SSH.",
-              "required": true,
-              "virtual": false
+              "value_constraints": [
+                {
+                  "type": "regex",
+                  "description": "Prefix must start with a letter, be 1-8 characters long, and contain only letters and digits.",
+                  "value": "^[a-z](?:[a-z0-9-]{0,6}[a-z0-9])?$"
+                }
+              ],
+              "required": true
             },
             {
               "key": "vpc_hana_instance_sap_profile_id",
-              "type": "string",
-              "default_value": "mx2-16x128",
-              "description": "VPC instance profile for the SAP HANA database VSI. Use a SAP HANA-certified mx2, vx2d, or ux2d profile.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "vpc_hana_instance_image",
-              "type": "string",
-              "default_value": "ibm-redhat-9-6-amd64-sap-hana-10",
-              "description": "SAP HANA-certified RHEL or SLES operating system image for the SAP HANA database VSI.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "vpc_hana_instance_custom_storage_config",
-              "type": "array",
-              "custom_config": {
-                "type": "code_editor",
-                "grouping": "deployment",
-                "original_grouping": "deployment",
-                "config_constraints": {
-                  "supportedLanguages": [
-                    "hcl"
-                  ]
-                }
-              },
-              "default_value": [
-                {
-                  "name": "",
-                  "size": "",
-                  "count": "",
-                  "iops": "",
-                  "mount": ""
-                }
-              ],
-              "description": "Custom SAP HANA database storage configuration. An empty name uses the auto-calculated storage layout.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "vpc_hana_instance_additional_storage_config",
-              "type": "array",
-              "custom_config": {
-                "type": "code_editor",
-                "grouping": "deployment",
-                "original_grouping": "deployment",
-                "config_constraints": {
-                  "supportedLanguages": [
-                    "hcl"
-                  ]
-                }
-              },
-              "default_value": [
-                {
-                  "name": "usr-sap",
-                  "size": "50",
-                  "count": "1",
-                  "iops": "10iops-tier",
-                  "mount": "/usr/sap"
-                }
-              ],
-              "description": "Additional block volumes for the SAP HANA database VSI.",
-              "required": false,
-              "virtual": false
+              "required": true
             },
             {
               "key": "vpc_app_instance_profile_id",
-              "type": "string",
-              "default_value": "bx2-4x16",
-              "description": "VPC instance profile for the SAP application VSI.",
-              "required": false,
-              "virtual": false
+              "required": true
             },
             {
-              "key": "vpc_app_instance_image",
-              "type": "string",
-              "default_value": "ibm-redhat-9-6-amd64-sap-applications-10",
-              "description": "SAP Applications-certified RHEL or SLES operating system image for the SAP application VSI.",
-              "required": false,
-              "virtual": false
+              "key": "external_access_ip",
+              "default_value": "__NULL__",
+              "required": true
             },
             {
-              "key": "vpc_app_instance_storage_config",
-              "type": "array",
+              "key": "vpc_subnet_cidrs",
+              "required": true,
               "custom_config": {
-                "type": "code_editor",
                 "grouping": "deployment",
                 "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "ssh_public_key",
+              "type": "multiline_secure_value",
+              "display_name": "ssh_public_key",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "ssh_private_key",
+              "type": "multiline_secure_value",
+              "display_name": "ssh_private_key",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "ibmcloud_api_key",
+              "type": "multiline_secure_value",
+              "display_name": "ibmcloud_api_key",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "ansible_vault_password",
+              "type": "multiline_secure_value",
+              "required": true,
+              "default_value": "__NULL__",
+              "display_name": "ansible_vault_password",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "sap_solution",
+              "type": "string",
+              "default_value": "",
+              "required": true,
+              "options": [
+                {
+                  "displayname": "S/4HANA 2023",
+                  "value": "s4hana-2023"
+                },
+                {
+                  "displayname": "S/4HANA 2022",
+                  "value": "s4hana-2022"
+                },
+                {
+                  "displayname": "S/4HANA 2021",
+                  "value": "s4hana-2021"
+                },
+                {
+                  "displayname": "S/4HANA 2020",
+                  "value": "s4hana-2020"
+                },
+                {
+                  "displayname": "BW/4HANA 2021",
+                  "value": "bw4hana-2021"
+                }
+              ],
+              "custom_config": {}
+            },
+            {
+              "key": "ibmcloud_cos_service_credentials",
+              "type": "multiline_secure_value",
+              "display_name": "ibmcloud_cos_service_credentials",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "ibmcloud_cos_configuration",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "sap_hana_master_password",
+              "type": "multiline_secure_value",
+              "display_name": "sap_hana_master_password",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "sap_hana_vars",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "sap_swpm_master_password",
+              "type": "multiline_secure_value",
+              "display_name": "sap_swpm_master_password",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "sap_solution_vars",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "sap_domain",
+              "required": true
+            },
+            {
+              "key": "enable_monitoring",
+              "required": true
+            },
+            {
+              "key": "client_to_site_vpn",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "nfs_server_config",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "vpc_hana_instance_custom_storage_config",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor",
                 "config_constraints": {
                   "supportedLanguages": [
                     "hcl"
                   ]
                 }
-              },
-              "default_value": [
-                {
-                  "name": "usr-sap",
-                  "size": "50",
-                  "count": "1",
-                  "iops": "10iops-tier",
-                  "mount": "/usr/sap"
-                }
-              ],
-              "description": "Storage configuration for the SAP application VSI.",
-              "required": false,
-              "virtual": false
+              }
             },
             {
-              "key": "ssh_public_key",
-              "type": "string",
-              "default_value": "__NOT_SET__",
-              "description": "Public RSA SSH key used to create VPC virtual server instances.",
-              "required": true,
-              "virtual": false
-            },
-            {
-              "key": "ssh_private_key",
-              "type": "password",
-              "description": "Private RSA SSH key corresponding to the supplied public SSH key.",
-              "display_name": "Multiline secure value",
-              "required": true,
+              "key": "vpc_hana_instance_additional_storage_config",
               "custom_config": {
-                "type": "multiline_secure_value",
                 "grouping": "deployment",
-                "original_grouping": "deployment"
-              },
-              "virtual": false
+                "original_grouping": "deployment",
+                "type": "code_editor",
+                "config_constraints": {
+                  "supportedLanguages": [
+                    "hcl"
+                  ]
+                }
+              }
             },
             {
-              "key": "nfs_server_config",
-              "type": "object",
-              "default_value": {
-                "size": 200,
-                "iops": 600,
-                "mount_path": "/nfs"
-              },
-              "description": "NFS server configuration. Size is in GB, iops is the storage performance value, and mount_path is the operating system mount path.",
-              "required": false,
-              "virtual": false
+              "key": "vpc_app_instance_storage_config",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor",
+                "config_constraints": {
+                  "supportedLanguages": [
+                    "hcl"
+                  ]
+                }
+              }
             },
             {
               "key": "vpc_landing_zone_images",
               "type": "object",
               "default_value": {
-                "rhel_image": "ibm-redhat-9-6-amd64-sap-applications-1",
+                "rhel_image": "ibm-redhat-9-6-amd64-sap-applications-10",
                 "sles_image": "ibm-sles-15-7-amd64-sap-applications-1"
               },
-              "description": "Operating system images for VPC landing zone instances.",
-              "required": false,
-              "virtual": false
+              "required": false
             },
             {
-              "key": "sap_solution",
+              "key": "vpc_hana_instance_image",
               "type": "string",
-              "default_value": "__NOT_SET__",
-              "description": "SAP solution to install. Valid values are s4hana-2023, s4hana-2022, s4hana-2021, s4hana-2020, and bw4hana-2021.",
-              "required": true,
-              "virtual": false
+              "default_value": "ibm-redhat-9-6-amd64-sap-hana-10",
+              "required": false
             },
             {
-              "key": "sap_domain",
+              "key": "vpc_app_instance_image",
               "type": "string",
-              "default_value": "sap.com",
-              "description": "SAP domain name used across SAP HANA and SAP NetWeaver configurations.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "ibmcloud_cos_configuration",
-              "type": "object",
-              "default_value": {
-                "cos_region": "eu-geo",
-                "cos_bucket_name": "sap-binaries",
-                "cos_hana_software_path": "HANA_DB",
-                "cos_solution_software_path": "S4HANA_2023"
-              },
-              "description": "IBM Cloud Object Storage bucket and path configuration for SAP HANA and SAP solution installation media.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "ibmcloud_cos_service_credentials",
-              "type": "password",
-              "description": "IBM Cloud Object Storage service credentials as JSON containing apikey and resource_instance_id.",
-              "display_name": "Multiline secure value",
-              "required": true,
-              "custom_config": {
-                "type": "multiline_secure_value",
-                "grouping": "deployment",
-                "original_grouping": "deployment"
-              },
-              "virtual": false
-            },
-            {
-              "key": "sap_hana_master_password",
-              "type": "password",
-              "description": "SAP HANA master password. It must be 8-30 characters and include uppercase, lowercase, and numeric characters.",
-              "required": true,
-              "virtual": false
-            },
-            {
-              "key": "sap_hana_vars",
-              "type": "object",
-              "default_value": {
-                "sap_hana_install_sid": "HDB",
-                "sap_hana_install_number": "02"
-              },
-              "description": "SAP HANA system ID and two-digit instance number.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "sap_swpm_master_password",
-              "type": "password",
-              "description": "SAP Software Provisioning Manager master password. It must be 8-30 characters and include uppercase, lowercase, and numeric characters.",
-              "required": true,
-              "virtual": false
-            },
-            {
-              "key": "sap_solution_vars",
-              "type": "object",
-              "default_value": {
-                "sap_swpm_sid": "S4H",
-                "sap_swpm_ascs_instance_nr": "00",
-                "sap_swpm_pas_instance_nr": "01",
-                "sap_swpm_service_protectedwebmethods": "SDEFAULT -GetQueueStatistic -ABAPGetWPTable -EnqGetStatistic -GetProcessList -GetEnvironment -BAPGetSystemWPTable"
-              },
-              "description": "SAP system ID, ASCS and PAS instance numbers, and SAP Software Provisioning Manager web method configuration.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "client_to_site_vpn",
-              "type": "object",
-              "default_value": {
-                "enable": true,
-                "client_ip_pool": "192.168.0.0/16",
-                "vpn_client_access_group_users": []
-              },
-              "description": "Client-to-site VPN configuration and permitted user email addresses.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "sm_service_plan",
-              "type": "string",
-              "default_value": "standard",
-              "description": "Pricing plan for a new Secrets Manager instance. Valid values are standard and trial.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "existing_sm_instance_guid",
-              "type": "string",
-              "description": "GUID of an existing Secrets Manager instance. A new instance is created when omitted.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "existing_sm_instance_region",
-              "type": "string",
-              "description": "Region of the existing Secrets Manager instance. Required when existing_sm_instance_guid is supplied.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "enable_monitoring",
-              "type": "boolean",
-              "description": "Specify whether IBM Cloud Monitoring and the monitoring host are enabled.",
-              "required": true,
-              "virtual": false
+              "default_value": "ibm-redhat-9-6-amd64-sap-applications-10",
+              "required": false
             },
             {
               "key": "enable_scc_wp",
               "type": "boolean",
-              "description": "Enable Security and Compliance Center Workload Protection and configure its agent on all VSIs.",
-              "required": true,
-              "virtual": false
-            },
-            {
-              "key": "ansible_vault_password",
-              "type": "password",
-              "description": "Vault password used to encrypt Ansible playbooks containing sensitive information.",
-              "required": true,
-              "virtual": false
-            },
-            {
-              "key": "tags",
-              "type": "array",
-              "default_value": [],
-              "description": "Tags applied to IBM Cloud resources created by this solution.",
-              "required": false,
-              "virtual": false
-            },
-            {
-              "key": "vpc_subnet_cidrs",
-              "type": "object",
-              "default_value": {
-                "vpn": "10.30.10.0/24",
-                "mgmt": "10.30.20.0/24",
-                "vpe": "10.30.30.0/24",
-                "edge": "10.30.40.0/24"
-              },
-              "description": "CIDR ranges for the VPC subnets. Values must not overlap with existing networks.",
-              "required": false,
-              "virtual": false
+              "required": false
             },
             {
               "key": "enable_atracker",
               "type": "boolean",
-              "default_value": true,
-              "description": "Enable IBM Cloud Activity Tracker and associated resources.",
-              "required": false,
-              "virtual": false
+              "required": false
             },
             {
               "key": "enable_vpc_flow_logs",
               "type": "boolean",
-              "default_value": true,
-              "description": "Enable VPC flow logs.",
-              "required": false,
-              "virtual": false
+              "required": false
+            },
+            {
+              "key": "tags",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "sm_service_plan"
+            },
+            {
+              "key": "existing_sm_instance_guid"
+            },
+            {
+              "key": "existing_sm_instance_region",
+              "type": "string",
+              "default_value": "__NULL__",
+              "options": [
+                {
+                  "displayname": "Null",
+                  "value": "__NULL__"
+                },
+                {
+                  "displayname": "au-syd",
+                  "value": "au-syd"
+                },
+                {
+                  "displayname": "br-sao",
+                  "value": "br-sao"
+                },
+                {
+                  "displayname": "ca-tor",
+                  "value": "ca-tor"
+                },
+                {
+                  "displayname": "eu-de",
+                  "value": "eu-de"
+                },
+                {
+                  "displayname": "eu-gb",
+                  "value": "eu-gb"
+                },
+                {
+                  "displayname": "jp-osa",
+                  "value": "jp-osa"
+                },
+                {
+                  "displayname": "jp-tok",
+                  "value": "jp-tok"
+                },
+                {
+                  "displayname": "us-east",
+                  "value": "us-east"
+                },
+                {
+                  "displayname": "us-south",
+                  "value": "us-south"
+                }
+              ],
+              "custom_config": {}
             }
           ],
-          "terraform_version": "1.12.2",
-          "outputs": [
-            {
-              "key": "infrastructure_data",
-              "description": "VPC landing zone infrastructure details."
-            },
-            {
-              "key": "access_host_or_ip",
-              "description": "Public IP address of the bastion or jump host."
-            },
-            {
-              "key": "ansible_host_or_ip",
-              "description": "Private IP address of the network-services VSI."
-            },
-            {
-              "key": "dns_host_or_ip",
-              "description": "Private IP address of the DNS forwarder."
-            },
-            {
-              "key": "ntp_host_or_ip",
-              "description": "Private IP address of the NTP forwarder."
-            },
-            {
-              "key": "nfs_host_or_ip_path",
-              "description": "NFS server host and mount path."
-            },
-            {
-              "key": "proxy_host_or_ip_port",
-              "description": "Squid proxy host and port."
-            },
-            {
-              "key": "monitoring_instance",
-              "description": "IBM Cloud Monitoring instance details."
-            },
-            {
-              "key": "hana_db_instance",
-              "description": "SAP HANA database VSI details."
-            },
-            {
-              "key": "hana_db_volumes",
-              "description": "Block volumes attached to the SAP HANA database VSI."
-            },
-            {
-              "key": "app_instance",
-              "description": "SAP application VSI details."
-            },
-            {
-              "key": "app_volumes",
-              "description": "Block volumes attached to the SAP application VSI."
-            },
-            {
-              "key": "sap_hana_vars",
-              "description": "SAP HANA system details."
-            },
-            {
-              "key": "sap_solution_vars",
-              "description": "SAP NetWeaver system details."
-            }
-          ],
-          "install_type": "fullstack",
-          "scripts": [],
-          "change_notices": {}
+          "architecture": {
+            "features": [
+              {
+                "title": "SAP Solution",
+                "description": "Installed: SAP S/4HANA or BW/4HANA"
+              },
+              {
+                "title": "SAP VPC instances",
+                "description": "SAP HANA Instance: 1\n\nSAP NetWeaver Instances: 1"
+              },
+              {
+                "title": "SAP Monitoring Dashboard",
+                "description": "Installed and enabled"
+              },
+              {
+                "title": "Number of VPCs",
+                "description": "1"
+              },
+              {
+                "title": "Number of Power Virtual Server Workspace",
+                "description": "1"
+              },
+              {
+                "title": "Increases security with Key Management",
+                "description": "Yes"
+              },
+              {
+                "title": "Internet proxy on VPC",
+                "description": "Proxy service to reach public internet from PowerVS Workspace"
+              },
+              {
+                "title": "Additional management configurations on VPC",
+                "description": "NFS as service, NTP forwarder, and DNS forwarder reachable from PowerVS Workspace"
+              },
+              {
+                "title": "Client to site VPN with new or existing Secrets Manager instance",
+                "description": "Optional"
+              },
+              {
+                "title": "SCC Workload Protection instance",
+                "description": "Optional"
+              },
+              {
+                "title": "Monitoring Instance and Monitoring Intel VSI Host",
+                "description": "Optional"
+              }
+            ],
+            "diagrams": [
+              {
+                "diagram": {
+                  "caption": "SAP HANA with SAP S/4HANA or SAP BW/4HANA on IBM Cloud VPC",
+                  "url": "https://raw.githubusercontent.com/terraform-ibm-modules/terraform-ibm-vpc-sap/main/reference-architectures/sap-s4hana-bw4hana/deploy-arch-ibm-vpc-sap-s4hana-bw4hana.svg",
+                  "type": "image/svg+xml"
+                },
+                "description": "The solution creates an IBM Cloud VPC landing zone, SAP HANA database VSI, and SAP NetWeaver application VSI for SAP S/4HANA or SAP BW/4HANA."
+              }
+            ]
+          },
+          "terraform_version": "1.12.2"
         }
       ]
     }
