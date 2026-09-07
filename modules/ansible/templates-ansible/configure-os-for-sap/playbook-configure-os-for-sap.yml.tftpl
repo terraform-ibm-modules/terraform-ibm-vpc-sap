@@ -1,0 +1,39 @@
+# ------------------------------------------------------------------------
+# This playbook uses the redhat.sap_install collection for Intel VPC VSIs.
+# The collection is installed via rhel-system-roles-sap package.
+# ------------------------------------------------------------------------
+
+---
+- name: Ansible Play for preparing OS for SAP
+  hosts: all
+  vars:
+    sap_solution: ${sap_solution}
+    sap_domain: ${sap_domain}
+
+  tasks:
+  - name: Run SAP general preconfigure
+    ansible.builtin.include_role:
+      name: redhat.sap_install.sap_general_preconfigure
+    vars:
+      sap_general_preconfigure_fail_if_reboot_required: false
+
+  - name: Run SAP HANA preconfigure
+    ansible.builtin.include_role:
+      name: redhat.sap_install.sap_hana_preconfigure
+    vars:
+      sap_hana_preconfigure_fail_if_reboot_required: false
+    when:
+      - sap_solution is match("HANA")
+
+  - name: Run SAP Netweaver preconfigure
+    ansible.builtin.include_role:
+      name: redhat.sap_install.sap_netweaver_preconfigure
+    when:
+      - sap_solution is match("NETWEAVER")
+
+  - name: Reboot the machine with timeout 10 mins
+    ansible.builtin.reboot:
+
+  - name: Sleep 3 mins for host to be ready
+    ansible.builtin.pause:
+      minutes: 3
