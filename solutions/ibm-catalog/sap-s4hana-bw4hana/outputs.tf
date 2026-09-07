@@ -81,3 +81,13 @@ output "app_volumes" {
   description = "Block volumes attached to the SAP Application VSI."
   value       = module.app_server.volumes
 }
+
+output "sap_hana_vars" {
+  description = "SAP HANA system details."
+  value       = var.sap_hana_vars
+}
+
+output "sap_solution_vars" {
+  description = "SAP NetWeaver system details."
+  value       = var.sap_solution_vars
+}

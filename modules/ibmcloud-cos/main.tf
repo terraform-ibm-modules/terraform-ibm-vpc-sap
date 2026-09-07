@@ -30,7 +30,7 @@ resource "terraform_data" "download_objects" {
     host         = var.target_server_ip
     private_key  = var.ssh_private_key
     agent        = false
-    timeout      = "10m"
+    timeout      = "60m"
   }
 
   triggers_replace = terraform_data.trigger_cos_configuration

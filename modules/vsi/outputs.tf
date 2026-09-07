@@ -32,3 +32,7 @@ output "volumes" {
     profile  = v.profile
   }]
 }
+output "volume_attachments" {
+  description = "Volume attachments on the VSI, including volume_id and device."
+  value       = ibm_is_instance.vsi.volume_attachments
+}

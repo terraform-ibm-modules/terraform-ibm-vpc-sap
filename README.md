@@ -1,155 +1,59 @@
-<!-- Update this title with a descriptive name. Use sentence case. -->
-# Terraform modules template project
-
-<!--
-Update status and "latest release" badges:
-  1. For the status options, see https://terraform-ibm-modules.github.io/documentation/#/badge-status
-  2. Update the "latest release" badge to point to the correct module's repo. Replace "terraform-ibm-module-template" in two places.
-  3. Update the Terraform Registry badge to point to the correct published module path (replace "module-template" with the actual module name before release).
--->
+# IBM Cloud VPC SAP deployable architectures
 [![Incubating (Not yet consumable)](https://img.shields.io/badge/status-Incubating%20(Not%20yet%20consumable)-red)](https://terraform-ibm-modules.github.io/documentation/#/badge-status)
-[![latest release](https://img.shields.io/github/v/release/terraform-ibm-modules/terraform-ibm-module-template?logo=GitHub&sort=semver)](https://github.com/terraform-ibm-modules/terraform-ibm-module-template/releases/latest)
+[![latest release](https://img.shields.io/github/v/release/terraform-ibm-modules/terraform-ibm-vpc-sap?logo=GitHub&sort=semver)](https://github.com/terraform-ibm-modules/terraform-ibm-vpc-sap/releases/latest)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://renovatebot.com/)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
-[![Terraform Registry](https://img.shields.io/badge/terraform-registry-623CE4?logo=terraform)](https://registry.terraform.io/modules/terraform-ibm-modules/module-template/ibm/latest)
-<!--
-Add a description of modules in this repo.
-Expand on the repo short description in the .github/settings.yml file.
+[![Terraform Registry](https://img.shields.io/badge/terraform-registry-623CE4?logo=terraform)](https://registry.terraform.io/modules/terraform-ibm-modules/vpc-sap/ibm/latest)
 
-For information, see "Module names and descriptions" at
-https://terraform-ibm-modules.github.io/documentation/#/implementation-guidelines?id=module-names-and-descriptions
--->
+## Summary
+This repository provides Terraform deployable architectures and modules for automating the end-to-end deployment of SAP landscapes on **IBM Cloud Virtual Private Cloud (VPC)**. It deploys a secure VPC landing zone, provisions SAP HANA DB and SAP NetWeaver (Application) Virtual Server Instances (VSIs), configures storage and OS prerequisites, downloads installation media from IBM Cloud Object Storage (COS), and automates full SAP software provisioning (such as SAP S/4HANA or SAP BW/4HANA) using Ansible.
 
-TODO: Replace this with a description of the modules in this repo.
+### Solutions
 
+1. [IBM catalog VPC SAP S/4HANA or BW/4HANA variation](./solutions/ibm-catalog/sap-s4hana-bw4hana)
+    - Creates a VPC landing zone with management (jump/bastion) and network-services VSIs, interconnects them, and configures OS network management services (Squid proxy, NTP, NFS, and DNS) using Ansible Galaxy collection roles from the [ibm.power_linux_sap](https://galaxy.ansible.com/ui/repo/published/ibm/power_linux_sap/) collection.
+    - Creates and configures **one HANA DB VSI and one NetWeaver VSI** with **RHEL** OS distribution. Creates a private subnet for SAP communication for the entire landscape.
+    - Automatically calculates and configures HANA filesystems (`/hana/shared`, `/hana/data`, `/hana/log`, `/usr/sap`, `swap`) based on the instance memory profile, with support for custom storage layouts.
+    - Tunes the instances according to SAP's best practices.
+    - Downloads user-provided SAP installation binaries from an IBM Cloud Object Storage bucket onto a shared NFS file storage share.
+    - Installs and configures **SAP applications** (SAP HANA DB, SAP S/4HANA, SAP BW/4HANA) using [RHEL System Roles](https://access.redhat.com/articles/4488731): `sap_hana_install`, `sap_swpm`, `sap_general_preconfigure`, `sap_hana_preconfigure`, `sap_netweaver_preconfigure`
 
-<!-- The following content is automatically populated by the pre-commit hook -->
-<!-- BEGIN OVERVIEW HOOK -->
-## Overview
-<ul>
-  <li><a href="#terraform-ibm-vpc-sap">terraform-ibm-vpc-sap</a></li>
-  <li><a href="https://github.com/terraform-ibm-modules/terraform-ibm-vpc-sap/tree/main/modules">Submodules</a>
-    <ul>
-      <li><a href="https://github.com/terraform-ibm-modules/terraform-ibm-vpc-sap/tree/main/modules/vpc-landing-zone">vpc-landing-zone</a></li>
-      <li><a href="https://github.com/terraform-ibm-modules/terraform-ibm-vpc-sap/tree/main/modules/vpc-landing-zone/submodules/ansible">vpc-landing-zone/subansible</a></li>
-    </ul>
-  </li>
-  <li><a href="https://github.com/terraform-ibm-modules/terraform-ibm-vpc-sap/tree/main/solutions">Deployable Architectures</a>
-    <ul>
-      <li><a href="https://github.com/terraform-ibm-modules/terraform-ibm-vpc-sap/tree/main/solutions/ibm-catalog/sap-s4hana-bw4hana">IBM Cloud Catalog - Power Virtual Server for SAP HANA : 'SAP S/4HANA or SAP BW/4HANA'</a></li>
-    </ul>
-  </li>
-  <li><a href="#known-issues">Known issues</a></li>
-  <li><a href="#contributing">Contributing</a></li>
-</ul>
-<!-- END OVERVIEW HOOK -->
+## Reference architectures
+- [IBM catalog VPC SAP S/4HANA or BW/4HANA variation](./reference-architectures/sap-s4hana-bw4hana/deploy-arch-ibm-vpc-sap-s4hana-bw4hana.svg.drawio.svg)
 
 
-<!-- Replace this heading with the name of the root level module (the repo name) -->
-## terraform-ibm-module-template
 
-### Usage
+## Solutions
 
-<!--
-Add an example of the use of the module in the following code block.
-
-Use real values instead of "var.<var_name>" or other placeholder values
-unless real values don't help users know what to change.
--->
-
-```hcl
-terraform {
-  required_version = ">= 1.9.0"
-  required_providers {
-    ibm = {
-      source  = "IBM-Cloud/ibm"
-      version = "X.Y.Z"  # Lock into a provider version that satisfies the module constraints
-    }
-  }
-}
-
-locals {
-    region = "us-south"
-}
-
-provider "ibm" {
-  ibmcloud_api_key = "XXXXXXXXXX"  # replace with apikey value
-  region           = local.region
-}
-
-module "module_template" {
-  source            = "terraform-ibm-modules/<replace>/ibm"
-  version           = "X.Y.Z" # Replace "X.Y.Z" with a release version to lock into a specific release
-  region            = local.region
-  name              = "instance-name"
-  resource_group_id = "xxXXxxXXxXxXXXXxxXxxxXXXXxXXXXX" # Replace with the actual ID of resource group to use
-}
-```
-
-### Required access policies
-
-<!-- PERMISSIONS REQUIRED TO RUN MODULE
-If this module requires permissions, uncomment the following block and update
-the sample permissions, following the format.
-Replace the 'Sample IBM Cloud' service and roles with applicable values.
-The required information can usually be found in the services official
-IBM Cloud documentation.
-To view all available service permissions, you can go in the
-console at Manage > Access (IAM) > Access groups and click into an existing group
-(or create a new one) and in the 'Access' tab click 'Assign access'.
--->
-
-<!--
-You need the following permissions to run this module:
-
-- Service
-    - **Resource group only**
-        - `Viewer` access on the specific resource group
-    - **Sample IBM Cloud** service
-        - `Editor` platform access
-        - `Manager` service access
--->
-
-<!-- NO PERMISSIONS FOR MODULE
-If no permissions are required for the module, uncomment the following
-statement instead the previous block.
--->
-
-<!-- No permissions are needed to run this module.-->
+|                                  Variation                                  | Available on IBM Catalog | Creates VPC Landing Zone | Creates VPC HANA Instance | Creates VPC NW Instances | Performs VPC OS Config | Performs VPC SAP Tuning | Install SAP software |
+|:---------------------------------------------------------------------------:|:------------------------:|:------------------------:|:-------------------------:|:------------------------:|:----------------------:|:-----------------------:|:--------------------:|
+| [IBM catalog SAP S/4HANA or BW/4HANA variation](./solutions/ibm-catalog/sap-s4hana-bw4hana) | :heavy_check_mark: | :heavy_check_mark: | 1 | 1 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 
 
-<!-- The following content is automatically populated by the pre-commit hook -->
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-### Requirements
 
-No requirements.
+## Required IAM access policies
 
-### Modules
+You need the following permissions to run this module.
 
-No modules.
+- Account Management
+    - **Resource Group** service
+        - `Viewer` platform access
+    - IAM Services
+        - **VPC Infrastructure Services** service
+            - `Editor` platform access
+        - **IBM Cloud Object Storage** service
+            - `Reader` platform access
+        - **Key Protect** or **Hyper Protect Crypto Services** service
+            - `Editor` platform access
+        - **Secrets Manager** service
+            - `Editor` platform access (if Client-to-Site VPN is enabled)
+        - **IBM Cloud Monitoring** service
+            - `Editor` platform access (if monitoring is enabled)
 
-### Resources
-
-No resources.
-
-### Inputs
-
-No inputs.
-
-### Outputs
-
-No outputs.
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-
-## Known issues
-
-<!-- Update this if any known issues or limitations -->
-There are currently no known issues or limitations at this time.
-
-<!-- Leave this section as is so that your module has a link to local development environment set-up steps for contributors to follow -->
 ## Contributing
 
-You can report issues and request features for this module in GitHub issues in the module repo. See [Report an issue or request a feature](https://github.com/terraform-ibm-modules/.github/blob/main/.github/SUPPORT.md).
+You can report issues and request features for this module in GitHub issues in the module repository. See [Report an issue or request a feature](https://github.com/terraform-ibm-modules/.github/blob/main/.github/SUPPORT.md).
 
 To set up your local development environment, see [Local development setup](https://terraform-ibm-modules.github.io/documentation/#/local-dev-setup) in the project documentation.
+<!-- END CONTRIBUTING HOOK -->

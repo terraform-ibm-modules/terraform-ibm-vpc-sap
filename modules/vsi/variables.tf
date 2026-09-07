@@ -55,9 +55,11 @@ variable "tags" {
 }
 
 variable "volume_map" {
-  description = "Map of volumes to create and attach. Key is the full volume name; value is an object with 'size' (GB, as string) and 'iops' (IBM Cloud volume profile string)."
+  description = "Map of volumes to create and attach. Key is the full volume name; value is an object with 'size' (GB, as string) and 'iops' (IBM Cloud volume profile string), 'mount' (OS mount point or 'swap'), and 'count' (number of volumes to stripe)."
   type = map(object({
-    size = string
-    iops = string
+    size  = string
+    iops  = string
+    mount = string
+    count = string
   }))
 }

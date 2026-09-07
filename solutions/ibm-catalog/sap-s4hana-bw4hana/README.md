@@ -1,16 +1,16 @@
-# IBM Cloud Catalog - Power Virtual Server for SAP HANA : 'SAP S/4HANA or SAP BW/4HANA'
+# IBM Cloud Catalog - SAP HANA with SAP S/4HANA or SAP BW/4HANA on VPC
 
 # Summary
 
 ## Summary Outcome:
-   SAP S/4HANA or SAP BW/4HANA installation configuration to IBM VPC hosts.
+   Automated deployment of an SAP landscape (SAP HANA DB and SAP NetWeaver S/4HANA or BW/4HANA) on IBM Cloud Virtual Private Cloud (VPC).
 
 |                                  Variation                                  | Available on IBM Catalog | Requires Schematics Workspace ID | Creates VPC with VPC landing zone | Creates VPC HANA Instance | Creates VPC NW Instances | Performs VPC OS Config | Performs VPC SAP Tuning | Install SAP software |
-|:---------------------------------------------------------------------------:|:------------------------:|:--------------------------------:|:-------------------------------------:|:-----------------------------:|:----------------------------:|:--------------------------:|:---------------------------:|:--------------------:|
-| [IBM catalog SAP S/4HANA or BW/4HANA variation]( ./) |    :heavy_check_mark:    |        :heavy_check_mark:        |        :heavy_check_mark:        |               1               |            1            |     :heavy_check_mark:     |      :heavy_check_mark:     |          :heavy_check_mark:         |
+|:---------------------------------------------------------------------------:|:------------------------:|:--------------------------------:|:---------------------------------:|:-------------------------:|:------------------------:|:----------------------:|:-----------------------:|:--------------------:|
+| [IBM catalog SAP S/4HANA or BW/4HANA variation](./) |    :heavy_check_mark:    |        :heavy_check_mark:        |        :heavy_check_mark:        |             1             |            1             |   :heavy_check_mark:   |   :heavy_check_mark:    |  :heavy_check_mark:  |
 
 ## Architecture Diagram
-![sap-s4hana-bw4hana](https://github.com/terraform-ibm-modules/terraform-ibm-VPC-sap/blob/main/reference-architectures/sap-s4hana-bw4hana/deploy-arch-ibm-pvs-sap-s4hana-bw4hana.svg)
+![sap-s4hana-bw4hana](https://github.com/terraform-ibm-modules/terraform-ibm-vpc-sap/blob/main/reference-architectures/sap-s4hana-bw4hana/deploy-arch-ibm-vpc-sap-s4hana-bw4hana.svg)
 
 ## Overview
 1. [Summary Tasks](#summary-tasks)
@@ -21,40 +21,40 @@
 6. [Ansible roles used](#ansible-roles-used)
 
 - With the following components:
-- One VSI for management (jump/bastion)
-- One VSI for network-services configured as squid proxy, NTP and DNS servers(using Ansible Galaxy collection roles [ibm.power_linux_sap collection](https://galaxy.ansible.com/ui/repo/published/ibm/power_linux_sap/). This VSI also acts as central ansible execution node.
-- Optional VSI for Monitoring host
-- Optional [Client to site VPN server](https://cloud.ibm.com/docs/vpc?topic=vpc-vpn-client-to-site-overview)
-- Optional [File storage share](https://cloud.ibm.com/docs/vpc?topic=vpc-file-storage-create&interface=ui)
-- Optional [Network load balancer](https://cloud.ibm.com/docs/vpc?group=network-load-balancer)
-- Optional [IBM Cloud Security and Compliance Center Workload Protection](https://cloud.ibm.com/docs/workload-protection) and SCC Workload Protection agent configuration on the VSIs in the deployment
-- IBM Cloud Object storage(COS) Virtual Private endpoint gateway(VPE)
-- IBM Cloud Object storage(COS) Instance and buckets
-- VPC flow logs
-- KMS keys
-- Activity tracker
-- Optional Secrets Manager Instance Instance with private certificate.
-- An optional IBM Cloud Monitoring Instance
-- Creates and configures one VPC instance for SAP HANA based on best practices for HANA database.
-- Creates and configures one VPC instance for SAP NetWeaver based on best practices, hosting the PAS and ASCS instances.
-- Connects all created VPC instances to an NTP server and DNS forwarder specified by IP address or hostname.
-- Configures a shared NFS directory on all created VPC instances.
-- Optionally configures the monitoring host to collect relevant information from the Database and application servers and send it to the IBM Cloud® Monitoring Instance
-- Optionally installs Sysdig agent and configures connection to [IBM Cloud Security and Compliance Center Workload Protection](https://cloud.ibm.com/docs/workload-protection)
-- Supports installation of **S/4HANA2023, S/4HANA2022, S/4HANA2021, S/4HANA2020, BW/4HANA2021**.
-- Supports installation using **Maintenance Planner** as well.
-- Optionally installs and configures SAP Monitoring host and dashboard, if monitoring instance was deployed as part of [Power Virtual Server with VPC landing zone deployment](https://cloud.ibm.com/catalog/architecture/deploy-arch-ibm-pvs-inf-2dd486c7-b317-4aaa-907b-42671485ad96-global?catalog_query=aHR0cHM6Ly9jbG91ZC5pYm0uY29tL2NhdGFsb2c%2Fc2VhcmNoPXBvd2VyI3NlYXJjaF9yZXN1bHRz).
+- **VPC Infrastructure:**
+  - One VSI for management (jump/bastion)
+  - One VSI for network services configured as Squid proxy, NTP, and DNS servers (using Ansible Galaxy collection [ibm.power_linux_sap collection](https://galaxy.ansible.com/ui/repo/published/ibm/power_linux_sap/)). This VSI also acts as the central Ansible execution node.
+  - Optional VSI for Monitoring host
+  - Optional [Client-to-Site VPN server](https://cloud.ibm.com/docs/vpc?topic=vpc-vpn-client-to-site-overview)
+  - [File storage share (NFS)](https://cloud.ibm.com/docs/vpc?topic=vpc-file-storage-create&interface=ui) for SAP installation binaries and shared directories
+  - Optional [IBM Cloud Security and Compliance Center Workload Protection](https://cloud.ibm.com/docs/workload-protection) (Sysdig agent configured on all VSIs)
+  - IBM Cloud Object Storage (COS) Virtual Private Endpoint gateway (VPE)
+  - IBM Cloud Object Storage (COS) instance and buckets (for Activity Tracker & binaries)
+  - VPC Flow Logs
+  - Key Management Service (KMS) keys
+  - IBM Cloud Activity Tracker
+  - Optional Secrets Manager instance with private certificates
+  - Optional IBM Cloud Monitoring instance
+- **SAP Compute & Storage:**
+  - Creates and configures one VPC VSI for SAP HANA DB based on certified profiles and best practices.
+  - Creates and configures one VPC VSI for SAP NetWeaver (hosting PAS and ASCS instances) based on SAP best practices.
+  - Automatically calculates and configures HANA filesystems (`/hana/shared`, `/hana/data`, `/hana/log`, `/usr/sap`, `swap`) based on instance memory profile, with support for custom layouts.
+  - Connects all VPC instances to the central NTP server and DNS forwarder.
+  - Mounts the shared NFS directory on all created VPC instances.
+  - Downloads SAP HANA and solution installation media from IBM Cloud Object Storage directly onto the NFS share.
+  - Supports automated installation of **S/4HANA 2023, S/4HANA 2022, S/4HANA 2021, S/4HANA 2020, and BW/4HANA 2021** (including Maintenance Planner installations).
 
 
 ## Before you begin
-1. **It is required to have an existing IBM Cloud Object Storage (COS) instance**. Within the instance, an Object Storage Bucket containing the **SAP Software installation media files is required in the correct folder structure as defined** [here](#2-sap-binaries-required-for-installation-and-folder-structure-in-ibm-cloud-object-storage-bucket).
+1. **IBM Cloud Object Storage (COS) instance and bucket:**
+   An existing IBM Cloud Object Storage bucket containing the SAP Software installation media files in the required directory structure is needed. Refer to [`docs/s4hana23_bw4hana21_binaries.md`](docs/s4hana23_bw4hana21_binaries.md) for detailed layout requirements.
+2. **SSH Key Pair:**
+   An RSA key pair (2048-bit or 4096-bit) to access the jump host and target VPC VSIs.
 
 
 ## Notes
-- Filesystem sizes for HANA data and HANA log are **calculated automatically** based on the **memory size**.
-- Custom storage configuration by providing custom volume size, **iops**(tier0, tier1, tier3, tier5k), counts and mount points is supported.
-
-
+- Filesystem sizes for HANA data and log volumes are **calculated automatically** based on the chosen instance profile memory size.
+- Custom storage configuration is supported by specifying volume sizes, profiles/tiers (`3iops-tier`, `5iops-tier`, `10iops-tier`), volume counts, and mount points.
 
 ## Post Deployment
 1. All the installation logs and Ansible playbook files will be under the directory `/root/terraform_files/`.
@@ -77,8 +77,8 @@
 ### 2. Netweaver Instance:
 **Default values:**
 ```
-/usr/sap 50GB
-/sapmnt  300GB
+/usr/sap 50 GB
+/sapmnt  50 GB
 ```
 
 *Note: Supports custom storage configuration using provided optional variables.*
@@ -102,7 +102,11 @@
 
 | Name | Source | Version |
 |------|--------|---------|
+| <a name="module_ansible_sap_install_hana"></a> [ansible\_sap\_install\_hana](#module\_ansible\_sap\_install\_hana) | ../../../modules/ansible | n/a |
+| <a name="module_ansible_sap_install_solution"></a> [ansible\_sap\_install\_solution](#module\_ansible\_sap\_install\_solution) | ../../../modules/ansible | n/a |
 | <a name="module_app_server"></a> [app\_server](#module\_app\_server) | ../../../modules/vsi | n/a |
+| <a name="module_configure_os_app_server"></a> [configure\_os\_app\_server](#module\_configure\_os\_app\_server) | ../../../modules/ansible | n/a |
+| <a name="module_configure_os_hana_db"></a> [configure\_os\_hana\_db](#module\_configure\_os\_hana\_db) | ../../../modules/ansible | n/a |
 | <a name="module_hana_db"></a> [hana\_db](#module\_hana\_db) | ../../../modules/vsi | n/a |
 | <a name="module_ibmcloud_cos_download_hana_binaries"></a> [ibmcloud\_cos\_download\_hana\_binaries](#module\_ibmcloud\_cos\_download\_hana\_binaries) | ../../../modules/ibmcloud-cos | n/a |
 | <a name="module_ibmcloud_cos_download_solution_binaries"></a> [ibmcloud\_cos\_download\_solution\_binaries](#module\_ibmcloud\_cos\_download\_solution\_binaries) | ../../../modules/ibmcloud-cos | n/a |
@@ -124,7 +128,7 @@
 | <a name="input_client_to_site_vpn"></a> [client\_to\_site\_vpn](#input\_client\_to\_site\_vpn) | VPN configuration - the client ip pool and list of users email ids to access the environment. If enabled, then a Secret Manager instance is also provisioned with certificates generated. See optional parameters to reuse an existing Secrets manager instance. | <pre>object({<br/>    enable                        = bool<br/>    client_ip_pool                = string<br/>    vpn_client_access_group_users = list(string)<br/>  })</pre> | <pre>{<br/>  "client_ip_pool": "192.168.0.0/16",<br/>  "enable": true,<br/>  "vpn_client_access_group_users": []<br/>}</pre> | no |
 | <a name="input_enable_atracker"></a> [enable\_atracker](#input\_enable\_atracker) | Enable Activity Tracker. If true, Activity Tracker resources (KMS key, COS instance, bucket, and atracker configuration) will be created. | `bool` | `true` | no |
 | <a name="input_enable_monitoring"></a> [enable\_monitoring](#input\_enable\_monitoring) | Specify whether Monitoring will be enabled. This includes the creation of an IBM Cloud Monitoring Instance and an Intel Monitoring Instance to host the services. | `bool` | n/a | yes |
-| <a name="input_enable_scc_wp"></a> [enable\_scc\_wp](#input\_enable\_scc\_wp) | Set to true to enable SCC Workload Protection and install and configure the SCC Workload Protection agent on all VSIs and PowerVS instances in this deployment. | `bool` | n/a | yes |
+| <a name="input_enable_scc_wp"></a> [enable\_scc\_wp](#input\_enable\_scc\_wp) | Set to true to enable SCC Workload Protection and install and configure the SCC Workload Protection agent on all VSIs in this deployment. | `bool` | n/a | yes |
 | <a name="input_enable_vpc_flow_logs"></a> [enable\_vpc\_flow\_logs](#input\_enable\_vpc\_flow\_logs) | Enable VPC flow logs. If true, flow logs will be stored in the atracker bucket. | `bool` | `true` | no |
 | <a name="input_existing_sm_instance_guid"></a> [existing\_sm\_instance\_guid](#input\_existing\_sm\_instance\_guid) | An existing Secrets Manager GUID. If not provided a new instance will be provisioned. | `string` | `null` | no |
 | <a name="input_existing_sm_instance_region"></a> [existing\_sm\_instance\_region](#input\_existing\_sm\_instance\_region) | Required if value is passed into `var.existing_sm_instance_guid`. | `string` | `null` | no |
@@ -132,23 +136,28 @@
 | <a name="input_ibmcloud_api_key"></a> [ibmcloud\_api\_key](#input\_ibmcloud\_api\_key) | IBM Cloud platform API key needed to deploy IAM enabled resources. | `string` | n/a | yes |
 | <a name="input_ibmcloud_cos_configuration"></a> [ibmcloud\_cos\_configuration](#input\_ibmcloud\_cos\_configuration) | IBM Cloud Object Storage bucket containing SAP installation binaries. 'cos\_hana\_software\_path' must contain only HANA DB binaries. 'cos\_solution\_software\_path' must contain only S/4HANA or BW/4HANA binaries (no IMDB files). Avoid a leading '/' in path values. Files are downloaded to the NFS share mount path. | <pre>object({<br/>    cos_region                 = string<br/>    cos_bucket_name            = string<br/>    cos_hana_software_path     = string<br/>    cos_solution_software_path = string<br/>  })</pre> | <pre>{<br/>  "cos_bucket_name": "sap-binaries",<br/>  "cos_hana_software_path": "HANA_DB",<br/>  "cos_region": "eu-geo",<br/>  "cos_solution_software_path": "S4HANA_2023"<br/>}</pre> | no |
 | <a name="input_ibmcloud_cos_service_credentials"></a> [ibmcloud\_cos\_service\_credentials](#input\_ibmcloud\_cos\_service\_credentials) | Service credentials for the IBM Cloud Object Storage instance, as a JSON string. Must contain 'apikey' and 'resource\_instance\_id'. See https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-service-credentials. | `string` | n/a | yes |
-| <a name="input_nfs_server_config"></a> [nfs\_server\_config](#input\_nfs\_server\_config) | Configuration for the NFS server. 'size' is in GB, 'iops' is maximum input/output operation performance bandwidth per second, 'mount\_path' defines the target mount point on os. Set 'configure\_nfs\_server' to false to ignore creating file storage share. | <pre>object({<br/>    size       = number<br/>    iops       = number<br/>    mount_path = string<br/>  })</pre> | <pre>{<br/>  "iops": 600,<br/>  "mount_path": "/nfs",<br/>  "size": 200<br/>}</pre> | no |
-| <a name="input_prefix"></a> [prefix](#input\_prefix) | Unique prefix for resources to be created (e.g., SAP system name). Must be an alphanumeric string with maximum length of 8 characters. | `string` | n/a | yes |
+| <a name="input_nfs_server_config"></a> [nfs\_server\_config](#input\_nfs\_server\_config) | Configuration for the NFS server. 'size' is in GB, 'iops' is maximum input/output operation performance bandwidth per second, 'mount\_path' defines the target mount point on os. | <pre>object({<br/>    size       = number<br/>    iops       = number<br/>    mount_path = string<br/>  })</pre> | <pre>{<br/>  "iops": 600,<br/>  "mount_path": "/nfs",<br/>  "size": 200<br/>}</pre> | no |
+| <a name="input_prefix"></a> [prefix](#input\_prefix) | Unique prefix for resources to be created (e.g., SAP system name). Must be an lowercase alphanumeric characters and hyphens with maximum length of 7 characters. | `string` | n/a | yes |
+| <a name="input_sap_domain"></a> [sap\_domain](#input\_sap\_domain) | SAP domain name used across HANA and NetWeaver configurations. | `string` | `"sap.com"` | no |
+| <a name="input_sap_hana_master_password"></a> [sap\_hana\_master\_password](#input\_sap\_hana\_master\_password) | SAP HANA master password. | `string` | n/a | yes |
+| <a name="input_sap_hana_vars"></a> [sap\_hana\_vars](#input\_sap\_hana\_vars) | SAP HANA SID and instance number. | <pre>object({<br/>    sap_hana_install_sid    = string<br/>    sap_hana_install_number = string<br/>  })</pre> | <pre>{<br/>  "sap_hana_install_number": "02",<br/>  "sap_hana_install_sid": "HDB"<br/>}</pre> | no |
+| <a name="input_sap_solution"></a> [sap\_solution](#input\_sap\_solution) | SAP Solution to be installed on VPC instances. | `string` | n/a | yes |
+| <a name="input_sap_solution_vars"></a> [sap\_solution\_vars](#input\_sap\_solution\_vars) | SAP SID, ASCS and PAS instance numbers, and the SWPM service web methods protection list. | <pre>object({<br/>    sap_swpm_sid                         = string<br/>    sap_swpm_ascs_instance_nr            = string<br/>    sap_swpm_pas_instance_nr             = string<br/>    sap_swpm_service_protectedwebmethods = string<br/><br/>  })</pre> | <pre>{<br/>  "sap_swpm_ascs_instance_nr": "00",<br/>  "sap_swpm_pas_instance_nr": "01",<br/>  "sap_swpm_service_protectedwebmethods": "SDEFAULT -GetQueueStatistic -ABAPGetWPTable -EnqGetStatistic -GetProcessList -GetEnvironment -BAPGetSystemWPTable",<br/>  "sap_swpm_sid": "S4H"<br/>}</pre> | no |
+| <a name="input_sap_swpm_master_password"></a> [sap\_swpm\_master\_password](#input\_sap\_swpm\_master\_password) | SAP SWPM master password. | `string` | n/a | yes |
 | <a name="input_sm_service_plan"></a> [sm\_service\_plan](#input\_sm\_service\_plan) | The service/pricing plan to use when provisioning a new Secrets Manager instance. Allowed values: `standard` and `trial`. Only used if `existing_sm_instance_guid` is set to null. | `string` | `"standard"` | no |
-| <a name="input_ssh_private_key"></a> [ssh\_private\_key](#input\_ssh\_private\_key) | Private SSH key (RSA format) used to login to IBM PowerVS instances. Should match to uploaded public SSH key referenced by 'ssh\_public\_key' which was created previously. The key is temporarily stored and deleted. For more information about SSH keys, see [SSH keys](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys). | `string` | n/a | yes |
+| <a name="input_ssh_private_key"></a> [ssh\_private\_key](#input\_ssh\_private\_key) | Private SSH key (RSA format) used to login to IBM VPC instances. Should match to uploaded public SSH key referenced by 'ssh\_public\_key' which was created previously. The key is temporarily stored and deleted. For more information about SSH keys, see [SSH keys](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys). | `string` | n/a | yes |
 | <a name="input_ssh_public_key"></a> [ssh\_public\_key](#input\_ssh\_public\_key) | Public SSH Key for VSI creation. Must be an RSA key with a key size of either 2048 bits or 4096 bits (recommended). Must be a valid SSH key that does not already exist in the deployment region. | `string` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | List of tag names for the IBM Cloud resources created. | `list(string)` | `[]` | no |
-| <a name="input_vpc_landing_zone_images"></a> [vpc\_landing\_zone\_images](#input\_vpc\_landing\_zone\_images) | Stock OS image names for creating VPC landing zone VSI instances: RHEL (management and network services) and SLES (monitoring). | <pre>object({<br/>    rhel_image = string<br/>    sles_image = string<br/>  })</pre> | <pre>{<br/>  "rhel_image": "ibm-redhat-9-6-amd64-sap-applications-1",<br/>  "sles_image": "ibm-sles-15-7-amd64-sap-applications-1"<br/>}</pre> | no |
-| <a name="input_vpc_subnet_cidrs"></a> [vpc\_subnet\_cidrs](#input\_vpc\_subnet\_cidrs) | CIDR values for the VPC subnets to be created. It's customer responsibility that none of the defined networks collide, including the PowerVS subnets and VPN client pool. | <pre>object({<br/>    vpn  = string<br/>    mgmt = string<br/>    vpe  = string<br/>    edge = string<br/>  })</pre> | <pre>{<br/>  "edge": "10.30.40.0/24",<br/>  "mgmt": "10.30.20.0/24",<br/>  "vpe": "10.30.30.0/24",<br/>  "vpn": "10.30.10.0/24"<br/>}</pre> | no |
-| <a name="input_vpc_zone"></a> [vpc\_zone](#input\_vpc\_zone) | IBM Cloud data center location where VPC resources will be created. | `string` | n/a | yes |
-| <a name="input_vsi_app_additional_storage_config"></a> [vsi\_app\_additional\_storage\_config](#input\_vsi\_app\_additional\_storage\_config) | Additional block volumes to attach to the APP VSI, appended after the custom or default volumes. Leave as default (empty name) to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS. | <pre>list(object({<br/>    name  = string<br/>    size  = string<br/>    count = string<br/>    iops  = string<br/>    mount = string<br/>  }))</pre> | <pre>[<br/>  {<br/>    "count": "",<br/>    "iops": "",<br/>    "mount": "",<br/>    "name": "",<br/>    "size": ""<br/>  }<br/>]</pre> | no |
-| <a name="input_vsi_app_image"></a> [vsi\_app\_image](#input\_vsi\_app\_image) | OS image name for the SAP Application VSI. Must be an SAP Applications certified RHEL or SLES image. | `string` | `"ibm-redhat-9-6-amd64-sap-applications-10"` | no |
-| <a name="input_vsi_app_profile"></a> [vsi\_app\_profile](#input\_vsi\_app\_profile) | VPC instance profile for the SAP Application VSI. | `string` | `"bx2-4x16"` | no |
-| <a name="input_vsi_app_storage_config"></a> [vsi\_app\_storage\_config](#input\_vsi\_app\_storage\_config) | Custom storage for the APP VSI. Replaces the default layout. Leave as default (empty name) to use the default layout [128 GB /usr/sap, 10 GB swap]. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS. | <pre>list(object({<br/>    name  = string<br/>    size  = string<br/>    count = string<br/>    iops  = string<br/>    mount = string<br/>  }))</pre> | <pre>[<br/>  {<br/>    "count": "",<br/>    "iops": "",<br/>    "mount": "",<br/>    "name": "",<br/>    "size": ""<br/>  }<br/>]</pre> | no |
-| <a name="input_vsi_hana_db_additional_storage_config"></a> [vsi\_hana\_db\_additional\_storage\_config](#input\_vsi\_hana\_db\_additional\_storage\_config) | Additional block volumes to attach to the HANA DB VSI, appended after the custom or auto-calculated volumes. Useful for extra file systems such as backup or archive mounts. Leave as default (empty name) to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS. | <pre>list(object({<br/>    name  = string<br/>    size  = string<br/>    count = string<br/>    iops  = string<br/>    mount = string<br/>    pool  = optional(string)<br/>  }))</pre> | <pre>[<br/>  {<br/>    "count": "",<br/>    "iops": "",<br/>    "mount": "",<br/>    "name": "",<br/>    "size": ""<br/>  }<br/>]</pre> | no |
-| <a name="input_vsi_hana_db_image"></a> [vsi\_hana\_db\_image](#input\_vsi\_hana\_db\_image) | OS image name for the SAP HANA DB VSI. Must be an SAP HANA certified RHEL or SLES image. | `string` | `"ibm-redhat-9-6-amd64-sap-hana-10"` | no |
-| <a name="input_vsi_hana_db_profile"></a> [vsi\_hana\_db\_profile](#input\_vsi\_hana\_db\_profile) | VPC instance profile for the SAP HANA DB VSI. Must be a HANA-certified mx2, vx2d, or ux2d profile. The memory encoded in the profile name (e.g. mx2-16x128 → 128 GB) is used to auto-calculate volume sizes. | `string` | `"mx2-16x128"` | no |
-| <a name="input_vsi_hana_db_storage_config"></a> [vsi\_hana\_db\_storage\_config](#input\_vsi\_hana\_db\_storage\_config) | Custom storage for the HANA DB VSI. Replaces the entire auto-calculated layout. Leave as default (empty name) to use auto-calculated volumes for hana/data, hana/log, hana/shared, usr/sap and swap from the profile memory. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS. | <pre>list(object({<br/>    name  = string<br/>    size  = string<br/>    count = string<br/>    iops  = string<br/>    mount = string<br/>    pool  = optional(string)<br/>  }))</pre> | <pre>[<br/>  {<br/>    "count": "",<br/>    "iops": "",<br/>    "mount": "",<br/>    "name": "",<br/>    "size": ""<br/>  }<br/>]</pre> | no |
+| <a name="input_vpc_app_instance_image"></a> [vpc\_app\_instance\_image](#input\_vpc\_app\_instance\_image) | OS image name for the SAP Application VSI. Must be an SAP Applications certified RHEL or SLES image. | `string` | `"ibm-redhat-9-6-amd64-sap-applications-10"` | no |
+| <a name="input_vpc_app_instance_profile_id"></a> [vpc\_app\_instance\_profile\_id](#input\_vpc\_app\_instance\_profile\_id) | VPC instance profile for the SAP Application VSI. | `string` | `"bx2-4x16"` | no |
+| <a name="input_vpc_app_instance_storage_config"></a> [vpc\_app\_instance\_storage\_config](#input\_vpc\_app\_instance\_storage\_config) | storage for the APP VSI. Replaces the default layout. Leave as default (empty name) to use the default layout [50 GB /usr/sap, 50 GB /sapmnt]. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS. | <pre>list(object({<br/>    name  = string<br/>    size  = string<br/>    count = string<br/>    iops  = string<br/>    mount = string<br/>  }))</pre> | <pre>[<br/>  {<br/>    "count": "1",<br/>    "iops": "10iops-tier",<br/>    "mount": "/usr/sap",<br/>    "name": "usr-sap",<br/>    "size": "50"<br/>  },<br/>  {<br/>    "count": "1",<br/>    "iops": "10iops-tier",<br/>    "mount": "swap",<br/>    "name": "swap",<br/>    "size": "30"<br/>  },<br/>  {<br/>    "count": "1",<br/>    "iops": "10iops-tier",<br/>    "mount": "/sapmnt",<br/>    "name": "sap-mnt",<br/>    "size": "50"<br/>  }<br/>]</pre> | no |
+| <a name="input_vpc_hana_instance_additional_storage_config"></a> [vpc\_hana\_instance\_additional\_storage\_config](#input\_vpc\_hana\_instance\_additional\_storage\_config) | Additional block volumes to attach to the HANA DB VSI, appended after the custom or auto-calculated volumes. Useful for extra file systems such as backup or archive mounts. Leave as default to attach no additional volumes. Each entry: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS. | <pre>list(object({<br/>    name  = string<br/>    size  = string<br/>    count = string<br/>    iops  = string<br/>    mount = string<br/>    pool  = optional(string)<br/>  }))</pre> | <pre>[<br/>  {<br/>    "count": "1",<br/>    "iops": "10iops-tier",<br/>    "mount": "/usr/sap",<br/>    "name": "usr-sap",<br/>    "size": "50"<br/>  }<br/>]</pre> | no |
+| <a name="input_vpc_hana_instance_custom_storage_config"></a> [vpc\_hana\_instance\_custom\_storage\_config](#input\_vpc\_hana\_instance\_custom\_storage\_config) | Custom storage for the HANA DB VSI. Replaces the entire auto-calculated layout. Leave as default (empty name) to use auto-calculated volumes for hana/data, hana/log, hana/shared, and swap from the profile memory. Each entry defines one block volume: 'name' is a label, 'size' is in GB, 'count' is the number of volumes to stripe, 'iops' is the IBM Cloud volume profile (3iops-tier/5iops-tier/10iops-tier), 'mount' is the target mount point on the OS. | <pre>list(object({<br/>    name  = string<br/>    size  = string<br/>    count = string<br/>    iops  = string<br/>    mount = string<br/>    pool  = optional(string)<br/>  }))</pre> | <pre>[<br/>  {<br/>    "count": "",<br/>    "iops": "",<br/>    "mount": "",<br/>    "name": "",<br/>    "size": ""<br/>  }<br/>]</pre> | no |
+| <a name="input_vpc_hana_instance_image"></a> [vpc\_hana\_instance\_image](#input\_vpc\_hana\_instance\_image) | OS image name for the SAP HANA DB VSI. Must be an SAP HANA certified RHEL or SLES image. | `string` | `"ibm-redhat-9-6-amd64-sap-hana-10"` | no |
+| <a name="input_vpc_hana_instance_sap_profile_id"></a> [vpc\_hana\_instance\_sap\_profile\_id](#input\_vpc\_hana\_instance\_sap\_profile\_id) | VPC instance profile for the VPC SAP HANA instance. Must be a HANA-certified mx2, vx2d, or ux2d profile. The memory encoded in the profile name (e.g. mx2-16x128 → 128 GB) is used to auto-calculate volume sizes. | `string` | `"mx2-16x128"` | no |
+| <a name="input_vpc_landing_zone_images"></a> [vpc\_landing\_zone\_images](#input\_vpc\_landing\_zone\_images) | Stock OS image names for creating VPC landing zone VSI instances: RHEL (management and network services) and SLES (monitoring). | <pre>object({<br/>    rhel_image = string<br/>    sles_image = string<br/>  })</pre> | <pre>{<br/>  "rhel_image": "ibm-redhat-9-6-amd64-sap-applications-10",<br/>  "sles_image": "ibm-sles-15-7-amd64-sap-applications-1"<br/>}</pre> | no |
+| <a name="input_vpc_subnet_cidrs"></a> [vpc\_subnet\_cidrs](#input\_vpc\_subnet\_cidrs) | CIDR values for the VPC subnets to be created. It's customer responsibility that none of the defined networks collide, including VPN client pool. | <pre>object({<br/>    vpn  = string<br/>    mgmt = string<br/>    vpe  = string<br/>    edge = string<br/>  })</pre> | <pre>{<br/>  "edge": "10.30.40.0/24",<br/>  "mgmt": "10.30.20.0/24",<br/>  "vpe": "10.30.30.0/24",<br/>  "vpn": "10.30.10.0/24"<br/>}</pre> | no |
+| <a name="input_vpc_zone"></a> [vpc\_zone](#input\_vpc\_zone) | IBM Cloud VPC Zone location where VPC resources will be created. | `string` | n/a | yes |
 
 ### Outputs
 
@@ -166,4 +175,6 @@
 | <a name="output_nfs_host_or_ip_path"></a> [nfs\_host\_or\_ip\_path](#output\_nfs\_host\_or\_ip\_path) | NFS server host and mount path. |
 | <a name="output_ntp_host_or_ip"></a> [ntp\_host\_or\_ip](#output\_ntp\_host\_or\_ip) | Private IP of the NTP forwarder. |
 | <a name="output_proxy_host_or_ip_port"></a> [proxy\_host\_or\_ip\_port](#output\_proxy\_host\_or\_ip\_port) | Squid proxy host:port. |
+| <a name="output_sap_hana_vars"></a> [sap\_hana\_vars](#output\_sap\_hana\_vars) | SAP HANA system details. |
+| <a name="output_sap_solution_vars"></a> [sap\_solution\_vars](#output\_sap\_solution\_vars) | SAP NetWeaver system details. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

@@ -1,5 +1,5 @@
 #####################################################
-# IBM Cloud PowerVS workspace Module
+# IBM Cloud COS module
 #####################################################
 
 terraform {
