@@ -42,10 +42,330 @@
       ],
       "flavors": [
         {
+          "label": "SAP ready VPC",
+          "name": "sap-ready-to-go",
+          "install_type": "fullstack",
+          "index": 1,
+          "working_directory": "solutions/ibm-catalog/sap-ready-to-go",
+          "short_description": "VPC instances for SAP HANA and SAP NetWeaver are deployed and preconfigured for SAP installation.",
+          "schematics_env_values": {
+            "value": "[{\"name\": \"API_DATA_IS_SENSITIVE\",\"value\": \"true\",\"secure\": false,\"hidden\": true}]"
+          },
+          "configuration": [
+            {
+              "key": "vpc_zone",
+              "type": "string",
+              "default_value": "__NOT_SET__",
+              "required": true
+            },
+            {
+              "key": "prefix",
+              "type": "string",
+              "default_value": "__NOT_SET__",
+              "value_constraints": [
+                {
+                  "type": "regex",
+                  "description": "Prefix must start with a letter, be 1-8 characters long, and contain only letters and digits.",
+                  "value": "^[a-z](?:[a-z0-9-]{0,6}[a-z0-9])?$"
+                }
+              ],
+              "required": true
+            },
+            {
+              "key": "vpc_hana_instance_sap_profile_id",
+              "required": true
+            },
+            {
+              "key": "vpc_app_instance_profile_id",
+              "required": true
+            },
+            {
+              "key": "external_access_ip",
+              "default_value": "__NULL__",
+              "required": true
+            },
+            {
+              "key": "vpc_subnet_cidrs",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "ssh_public_key",
+              "type": "multiline_secure_value",
+              "display_name": "ssh_public_key",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "ssh_private_key",
+              "type": "multiline_secure_value",
+              "display_name": "ssh_private_key",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "ibmcloud_api_key",
+              "type": "multiline_secure_value",
+              "display_name": "ibmcloud_api_key",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "ansible_vault_password",
+              "type": "multiline_secure_value",
+              "required": true,
+              "default_value": "__NULL__",
+              "display_name": "ansible_vault_password",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "multiline_secure_value"
+              }
+            },
+            {
+              "key": "sap_domain",
+              "required": true
+            },
+            {
+              "key": "enable_monitoring",
+              "required": true
+            },
+            {
+              "key": "client_to_site_vpn",
+              "required": true,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "nfs_server_config",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "vpc_hana_instance_custom_storage_config",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor",
+                "config_constraints": {
+                  "supportedLanguages": [
+                    "hcl"
+                  ]
+                }
+              }
+            },
+            {
+              "key": "vpc_hana_instance_additional_storage_config",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor",
+                "config_constraints": {
+                  "supportedLanguages": [
+                    "hcl"
+                  ]
+                }
+              }
+            },
+            {
+              "key": "vpc_app_instance_storage_config",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor",
+                "config_constraints": {
+                  "supportedLanguages": [
+                    "hcl"
+                  ]
+                }
+              }
+            },
+            {
+              "key": "vpc_landing_zone_images",
+              "type": "object",
+              "default_value": {
+                "rhel_image": "ibm-redhat-9-6-amd64-sap-applications-10",
+                "sles_image": "ibm-sles-15-7-amd64-sap-applications-1"
+              },
+              "required": false
+            },
+            {
+              "key": "vpc_hana_instance_image",
+              "type": "string",
+              "default_value": "ibm-redhat-9-6-amd64-sap-hana-10",
+              "required": false
+            },
+            {
+              "key": "vpc_app_instance_image",
+              "type": "string",
+              "default_value": "ibm-redhat-9-6-amd64-sap-applications-10",
+              "required": false
+            },
+            {
+              "key": "enable_scc_wp",
+              "type": "boolean",
+              "required": false
+            },
+            {
+              "key": "enable_atracker",
+              "type": "boolean",
+              "required": false
+            },
+            {
+              "key": "enable_vpc_flow_logs",
+              "type": "boolean",
+              "required": false
+            },
+            {
+              "key": "tags",
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
+              "key": "sm_service_plan"
+            },
+            {
+              "key": "existing_sm_instance_guid"
+            },
+            {
+              "key": "existing_sm_instance_region",
+              "type": "string",
+              "default_value": "__NULL__",
+              "options": [
+                {
+                  "displayname": "Null",
+                  "value": "__NULL__"
+                },
+                {
+                  "displayname": "au-syd",
+                  "value": "au-syd"
+                },
+                {
+                  "displayname": "br-sao",
+                  "value": "br-sao"
+                },
+                {
+                  "displayname": "ca-tor",
+                  "value": "ca-tor"
+                },
+                {
+                  "displayname": "eu-de",
+                  "value": "eu-de"
+                },
+                {
+                  "displayname": "eu-gb",
+                  "value": "eu-gb"
+                },
+                {
+                  "displayname": "jp-osa",
+                  "value": "jp-osa"
+                },
+                {
+                  "displayname": "jp-tok",
+                  "value": "jp-tok"
+                },
+                {
+                  "displayname": "us-east",
+                  "value": "us-east"
+                },
+                {
+                  "displayname": "us-south",
+                  "value": "us-south"
+                }
+              ],
+              "custom_config": {}
+            }
+          ],
+          "architecture": {
+            "features": [
+              {
+                "title": "SAP Solution",
+                "description": "Not installed"
+              },
+              {
+                "title": "SAP VPC instances",
+                "description": "SAP HANA Instance: 1\n\nSAP NetWeaver Instances: 1"
+              },
+              {
+                "title": "SAP Monitoring Dashboard",
+                "description": "Not Installed"
+              },
+              {
+                "title": "Number of VPCs",
+                "description": "1"
+              },
+              {
+                "title": "Number of Power Virtual Server Workspace",
+                "description": "1"
+              },
+              {
+                "title": "Increases security with Key Management",
+                "description": "Yes"
+              },
+              {
+                "title": "Internet proxy on VPC",
+                "description": "Proxy service to reach public internet from PowerVS Workspace"
+              },
+              {
+                "title": "Additional management configurations on VPC",
+                "description": "NFS as service, NTP forwarder, and DNS forwarder reachable from PowerVS Workspace"
+              },
+              {
+                "title": "Client to site VPN with new or existing Secrets Manager instance",
+                "description": "Optional"
+              },
+              {
+                "title": "SCC Workload Protection instance",
+                "description": "Optional"
+              },
+              {
+                "title": "Monitoring Instance and Monitoring Intel VSI Host",
+                "description": "Optional"
+              }
+            ],
+            "diagrams": [
+              {
+                "diagram": {
+                  "caption": "Full SAP environment provisioned on a VPC infrastructure",
+                  "url": "https://raw.githubusercontent.com/terraform-ibm-modules/terraform-ibm-vpc-sap/main/reference-architectures/sap-ready-to-go/deploy-arch-ibm-vpc-sap-ready-to-go.svg",
+                  "type": "image/svg+xml"
+                },
+                "description": "The solution creates an IBM Cloud VPC landing zone, SAP HANA database VSI, and SAP NetWeaver application VSI for SAP S/4HANA or SAP BW/4HANA."
+              }
+            ]
+          },
+          "terraform_version": "1.12.2"
+        },
+        {
           "label": "SAP S/4HANA or BW/4HANA",
           "name": "sap-s4hana-bw4hana",
           "install_type": "fullstack",
-          "index": 0,
+          "index": 2,
           "working_directory": "solutions/ibm-catalog/sap-s4hana-bw4hana",
           "short_description": "Deploy SAP S/4HANA or BW/4HANA on VPC Landing Zone",
           "schematics_env_values": {

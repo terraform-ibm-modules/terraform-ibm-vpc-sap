@@ -11,13 +11,17 @@ This repository provides Terraform deployable architectures and modules for auto
 
 ### Solutions
 
-1. [IBM catalog VPC SAP S/4HANA or BW/4HANA variation](./solutions/ibm-catalog/sap-s4hana-bw4hana)
-    - Creates a VPC landing zone with management (jump/bastion) and network-services VSIs, interconnects them, and configures OS network management services (Squid proxy, NTP, NFS, and DNS) using Ansible Galaxy collection roles from the [ibm.power_linux_sap](https://galaxy.ansible.com/ui/repo/published/ibm/power_linux_sap/) collection.
-    - Creates and configures **one HANA DB VSI and one NetWeaver VSI** with **RHEL** OS distribution. Creates a private subnet for SAP communication for the entire landscape.
+1. [IBM catalog VPC SAP Ready](./solutions/ibm-catalog/sap-ready-to-go)
+    - Creates a VPC landing zone with management (jump/bastion) and network-services VSIs, and configures OS network management services (Squid proxy, NTP, NFS, and DNS) using Ansible Galaxy collection roles from the [ibm.power_linux_sap](https://galaxy.ansible.com/ui/repo/published/ibm/power_linux_sap/) collection.
+    - Creates and configures **one HANA DB VSI and one NetWeaver VSI** with **RHEL** OS distribution.
     - Automatically calculates and configures HANA filesystems (`/hana/shared`, `/hana/data`, `/hana/log`, `/usr/sap`, `swap`) based on the instance memory profile, with support for custom storage layouts.
-    - Tunes the instances according to SAP's best practices.
-    - Downloads user-provided SAP installation binaries from an IBM Cloud Object Storage bucket onto a shared NFS file storage share.
-    - Installs and configures **SAP applications** (SAP HANA DB, SAP S/4HANA, SAP BW/4HANA) using [RHEL System Roles](https://access.redhat.com/articles/4488731): `sap_hana_install`, `sap_swpm`, `sap_general_preconfigure`, `sap_hana_preconfigure`, `sap_netweaver_preconfigure`
+    - Tunes OS settings on HANA and NetWeaver VSIs for SAP workloads using [RHEL System Roles](https://access.redhat.com/articles/4488731): `sap_general_preconfigure`, `sap_hana_preconfigure`, `sap_netweaver_preconfigure`.
+    - **Does not install SAP software.** Instances are ready for SAP installation.
+
+2. [IBM catalog VPC SAP S/4HANA or BW/4HANA variation](./solutions/ibm-catalog/sap-s4hana-bw4hana)
+    - Builds on the SAP Ready foundation and additionally downloads SAP installation binaries from an IBM Cloud Object Storage bucket onto a shared NFS file storage share.
+    - Installs and configures **SAP applications** (SAP HANA DB, SAP S/4HANA, SAP BW/4HANA) using [RHEL System Roles](https://access.redhat.com/articles/4488731): `sap_hana_install`, `sap_swpm`, `sap_general_preconfigure`, `sap_hana_preconfigure`, `sap_netweaver_preconfigure`.
+    - Supports automated installation of **S/4HANA 2023, S/4HANA 2022, S/4HANA 2021, S/4HANA 2020, and BW/4HANA 2021**.
 
 ## Reference architectures
 - [IBM catalog VPC SAP S/4HANA or BW/4HANA variation](./reference-architectures/sap-s4hana-bw4hana/deploy-arch-ibm-vpc-sap-s4hana-bw4hana.svg.drawio.svg)
@@ -26,8 +30,9 @@ This repository provides Terraform deployable architectures and modules for auto
 
 ## Solutions
 
-|                                  Variation                                  | Available on IBM Catalog | Creates VPC Landing Zone | Creates VPC HANA Instance | Creates VPC NW Instances | Performs VPC OS Config | Performs VPC SAP Tuning | Install SAP software |
-|:---------------------------------------------------------------------------:|:------------------------:|:------------------------:|:-------------------------:|:------------------------:|:----------------------:|:-----------------------:|:--------------------:|
+|                                  Variation                                  | Available on IBM Catalog | Creates VPC Landing Zone | Creates VPC HANA Instance | Creates VPC NW Instance | Performs VPC OS Config | Performs VPC SAP Tuning | Install SAP software |
+|:---------------------------------------------------------------------------:|:------------------------:|:------------------------:|:-------------------------:|:-----------------------:|:----------------------:|:-----------------------:|:--------------------:|
+| [IBM catalog VPC SAP Ready](./solutions/ibm-catalog/sap-ready-to-go) | :heavy_check_mark: | :heavy_check_mark: | 1 | 1 | :heavy_check_mark: | :heavy_check_mark: | N/A |
 | [IBM catalog SAP S/4HANA or BW/4HANA variation](./solutions/ibm-catalog/sap-s4hana-bw4hana) | :heavy_check_mark: | :heavy_check_mark: | 1 | 1 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 
 
