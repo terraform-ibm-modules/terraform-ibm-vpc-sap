@@ -5,7 +5,7 @@
 ## Summary Outcome:
    Automated deployment of an SAP landscape (SAP HANA DB and SAP NetWeaver S/4HANA or BW/4HANA) on IBM Cloud Virtual Private Cloud (VPC).
 
-|                                  Variation                                  | Available on IBM Catalog | Requires Schematics Workspace ID | Creates VPC with VPC landing zone | Creates VPC HANA Instance | Creates VPC NW Instances | Performs VPC OS Config | Performs VPC SAP Tuning | Install SAP software |
+|                                  Variation                                  | Available on IBM Catalog | Requires Schematics Workspace ID | Creates VPC with VPC landing zone | Creates VPC HANA Instance | Creates VPC NW Instances | Performs VPC OS Config | Performs VPC SAP Tuning | Install SAP software | Install SAP Monitoring |
 |:---------------------------------------------------------------------------:|:------------------------:|:--------------------------------:|:---------------------------------:|:-------------------------:|:------------------------:|:----------------------:|:-----------------------:|:--------------------:|
 | [IBM catalog SAP S/4HANA or BW/4HANA variation](./) |    :heavy_check_mark:    |        :heavy_check_mark:        |        :heavy_check_mark:        |             1             |            1             |   :heavy_check_mark:   |   :heavy_check_mark:    |  :heavy_check_mark:  |
 
@@ -43,11 +43,12 @@
   - Mounts the shared NFS directory on all created VPC instances.
   - Downloads SAP HANA and solution installation media from IBM Cloud Object Storage directly onto the NFS share.
   - Supports automated installation of **S/4HANA 2023, S/4HANA 2022, S/4HANA 2021, S/4HANA 2020, and BW/4HANA 2021** (including Maintenance Planner installations).
+  - When `enable_monitoring` is set to `true`, downloads SAP monitoring binaries (HANA Client x86_64, SAPCAR x86_64) from the `cos_monitoring_software_path` in COS and configures the IBM Cloud Monitoring instance with SAP HANA and NetWeaver exporters on the dedicated SLES monitoring VSI.
 
 
 ## Before you begin
 1. **IBM Cloud Object Storage (COS) instance and bucket:**
-   An existing IBM Cloud Object Storage bucket containing the SAP Software installation media files in the required directory structure is needed. Refer to [`docs/s4hana23_bw4hana21_binaries.md`](docs/s4hana23_bw4hana21_binaries.md) for detailed layout requirements.
+   An existing IBM Cloud Object Storage bucket containing the SAP Software installation media files in the required directory structure is needed. Refer to [`docs/s4hana23_bw4hana21_binaries.md`](docs/s4hana23_bw4hana21_binaries.md) for detailed layout requirements.When `enable_monitoring` is `true`, a separate COS path (`cos_monitoring_software_path`) must contain the x86_64 monitoring binaries: `IMDB_CLIENT20_020_23-80002082.SAR` and `SAPCAR_1300-70007716.EXE`.
 2. **SSH Key Pair:**
    An RSA key pair (2048-bit or 4096-bit) to access the jump host and target VPC VSIs.
 
@@ -113,6 +114,8 @@
 | <a name="module_linux_init_app_server"></a> [linux\_init\_app\_server](#module\_linux\_init\_app\_server) | ../../../modules/vpc-landing-zone/submodules/ansible | n/a |
 | <a name="module_linux_init_hana_db"></a> [linux\_init\_hana\_db](#module\_linux\_init\_hana\_db) | ../../../modules/vpc-landing-zone/submodules/ansible | n/a |
 | <a name="module_standard"></a> [standard](#module\_standard) | ../../../modules/vpc-landing-zone | n/a |
+| <a name="module_ibmcloud_cos_download_monitoring_binaries"></a> [ibmcloud\_cos\_download\_monitoring\_binaries](#module\_ibmcloud\_cos\_download\_monitoring\_binaries) | ../../../modules/ibmcloud-cos | n/a |
+| <a name="module_ansible_monitoring_sap_install_solution"></a> [ansible\_monitoring\_sap\_install\_solution](#module\_ansible\_monitoring\_sap\_install\_solution) | ../../../modules/ansible | n/a |
 
 ### Resources
 
@@ -158,6 +161,7 @@
 | <a name="input_vpc_landing_zone_images"></a> [vpc\_landing\_zone\_images](#input\_vpc\_landing\_zone\_images) | Stock OS image names for creating VPC landing zone VSI instances: RHEL (management and network services) and SLES (monitoring). | <pre>object({<br/>    rhel_image = string<br/>    sles_image = string<br/>  })</pre> | <pre>{<br/>  "rhel_image": "ibm-redhat-9-6-amd64-sap-applications-10",<br/>  "sles_image": "ibm-sles-15-7-amd64-sap-applications-1"<br/>}</pre> | no |
 | <a name="input_vpc_subnet_cidrs"></a> [vpc\_subnet\_cidrs](#input\_vpc\_subnet\_cidrs) | CIDR values for the VPC subnets to be created. It's customer responsibility that none of the defined networks collide, including VPN client pool. | <pre>object({<br/>    vpn  = string<br/>    mgmt = string<br/>    vpe  = string<br/>    edge = string<br/>  })</pre> | <pre>{<br/>  "edge": "10.30.40.0/24",<br/>  "mgmt": "10.30.20.0/24",<br/>  "vpe": "10.30.30.0/24",<br/>  "vpn": "10.30.10.0/24"<br/>}</pre> | no |
 | <a name="input_vpc_zone"></a> [vpc\_zone](#input\_vpc\_zone) | IBM Cloud VPC Zone location where VPC resources will be created. | `string` | n/a | yes |
+| <a name="input_sap_monitoring_vars"></a> [sap\_monitoring\_vars](#input\_sap\_monitoring\_vars) | Configuration details for SAP monitoring dashboard. 'config_override': if true, an existing config is overwritten. 'sap_monitoring_nr': two-digit number 01–99. 'sap_monitoring_solution_name': short name to identify the SAP system in the dashboard. | <pre>object({<br/>  config_override  = bool<br/>    sap_monitoring_nr  = string<br/>  sap_monitoring_solution_name = string<br/>})</pre> | <pre>{<br/>  "config_override": false,<br/>  "sap_monitoring_nr": "01",<br/>  "sap_monitoring_solution_name": ""<br/>}</pre> | no |
 
 ### Outputs
 
