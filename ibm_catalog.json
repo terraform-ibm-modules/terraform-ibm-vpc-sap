@@ -556,6 +556,15 @@
               "required": true
             },
             {
+              "key": "sap_monitoring_vars",
+              "required": false,
+              "custom_config": {
+                "grouping": "deployment",
+                "original_grouping": "deployment",
+                "type": "code_editor"
+              }
+            },
+            {
               "key": "client_to_site_vpn",
               "required": true,
               "custom_config": {

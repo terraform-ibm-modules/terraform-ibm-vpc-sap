@@ -68,6 +68,15 @@ locals {
     cos_dir_name             = var.ibmcloud_cos_configuration.cos_solution_software_path
     download_dir_path        = local.cos_download_dir
   }
+
+  ibmcloud_cos_monitoring_configuration = {
+    cos_apikey               = local.cos_apikey
+    cos_region               = var.ibmcloud_cos_configuration.cos_region
+    cos_resource_instance_id = local.cos_instance_id
+    cos_bucket_name          = var.ibmcloud_cos_configuration.cos_bucket_name
+    cos_dir_name             = var.ibmcloud_cos_configuration.cos_monitoring_software_path
+    download_dir_path        = local.cos_download_dir
+  }
 }
 
 module "ibmcloud_cos_download_hana_binaries" {
@@ -88,6 +97,17 @@ module "ibmcloud_cos_download_solution_binaries" {
   target_server_ip           = module.standard.ansible_host_or_ip
   ssh_private_key            = var.ssh_private_key
   ibmcloud_cos_configuration = local.ibmcloud_cos_solution_configuration
+}
+
+module "ibmcloud_cos_download_monitoring_binaries" {
+  source     = "../../../modules/ibmcloud-cos"
+  count      = var.enable_monitoring ? 1 : 0
+  depends_on = [module.ibmcloud_cos_download_solution_binaries]
+
+  access_host_or_ip          = module.standard.access_host_or_ip
+  target_server_ip           = module.standard.ansible_host_or_ip
+  ssh_private_key            = var.ssh_private_key
+  ibmcloud_cos_configuration = local.ibmcloud_cos_monitoring_configuration
 }
 
 
@@ -290,9 +310,9 @@ module "configure_os_app_server" {
   inventory_template_vars     = { "pi_instance_management_ip" : module.app_server.instance_ip }
 }
 
-# locals {
-#   monitoring_instance = module.standard.monitoring_instance
-# }
+locals {
+  monitoring_instance = module.standard.monitoring_instance
+}
 
 # #####################################################
 # # Ansible Install HANA DB
@@ -387,53 +407,51 @@ module "ansible_sap_install_solution" {
 # # Ansible Install Monitoring SAP solution
 # #####################################################
 
-# locals {
+locals {
+  ansible_monitoring_solution_playbook_vars = merge(var.sap_monitoring_vars,
+    {
+      sap_monitoring_action          = "add"
+      sap_tools_directory            = "${var.nfs_server_config.mount_path}/${var.ibmcloud_cos_configuration.cos_monitoring_software_path}"
+      sap_hana_ip                    = module.hana_db.instance_ip
+      sap_hana_http_port             = "5${var.sap_hana_vars.sap_hana_install_number}13"
+      sap_hana_sql_systemdb_port     = "3${var.sap_hana_vars.sap_hana_install_number}13"
+      sap_hana_sql_systemdb_user     = "system"
+      sap_hana_sql_systemdb_password = var.sap_hana_master_password
+      sap_ascs_ip                    = module.app_server.instance_ip
+      sap_ascs_http_port             = "5${var.sap_solution_vars.sap_swpm_ascs_instance_nr}13"
+      sap_app_server = jsonencode([
+        {
+          sap_app_server_nr = "01"
+          ip                = module.app_server.instance_ip
+          port              = "5${var.sap_solution_vars.sap_swpm_pas_instance_nr}13"
+        }]
+      )
+      ibmcloud_monitoring_instance_url           = "https://ingest.prws.private.${local.monitoring_instance.location}.monitoring.cloud.ibm.com/prometheus/remote/write"
+      ibmcloud_monitoring_request_credential_url = "https://${local.monitoring_instance.location}.monitoring.cloud.ibm.com/api/token"
+      ibmcloud_monitoring_instance_guid          = local.monitoring_instance.guid
+    }
+  )
+}
 
-#   ansible_monitoring_solution_playbook_vars = merge(var.sap_monitoring_vars,
-#     {
-#       sap_monitoring_action          = "add"
-#       sap_tools_directory            = "${var.nfs_server_config.mount_path}/${var.ibmcloud_cos_configuration.cos_monitoring_software_path}"
-#       sap_hana_ip                    = module.sap_system.pi_hana_instance_management_ip
-#       sap_hana_http_port             = "5${var.sap_hana_vars.sap_hana_install_number}13"
-#       sap_hana_sql_systemdb_port     = "3${var.sap_hana_vars.sap_hana_install_number}13"
-#       sap_hana_sql_systemdb_user     = "system"
-#       sap_hana_sql_systemdb_password = var.sap_hana_master_password
-#       sap_ascs_ip                    = module.sap_system.pi_netweaver_instance_management_ips
-#       sap_ascs_http_port             = "5${var.sap_solution_vars.sap_swpm_ascs_instance_nr}13"
-#       sap_app_server = jsonencode([
-#         {
-#           sap_app_server_nr = "01"
-#           ip                = module.sap_system.pi_netweaver_instance_management_ips
-#           port              = "5${var.sap_solution_vars.sap_swpm_pas_instance_nr}13"
-#         }]
-#       )
-#       ibmcloud_monitoring_instance_url           = "https://ingest.prws.private.${local.monitoring_instance.location}.monitoring.cloud.ibm.com/prometheus/remote/write"
-#       ibmcloud_monitoring_request_credential_url = "https://${local.monitoring_instance.location}.monitoring.cloud.ibm.com/api/token"
-#       ibmcloud_monitoring_instance_guid          = local.monitoring_instance.guid
-#     }
-#   )
-# }
+module "ansible_monitoring_sap_install_solution" {
+  source     = "../../../modules/ansible"
+  count      = local.monitoring_instance.enable ? 1 : 0
+  depends_on = [module.ibmcloud_cos_download_monitoring_binaries, module.ansible_sap_install_hana, module.ansible_sap_install_solution]
 
+  bastion_host_ip        = module.standard.access_host_or_ip
+  ansible_host_or_ip     = module.standard.ansible_host_or_ip
+  ssh_private_key        = var.ssh_private_key
+  ansible_vault_password = var.ansible_vault_password
+  configure_ansible_host = false
+  ibmcloud_api_key       = var.ibmcloud_api_key
 
-# module "ansible_monitoring_sap_install_solution" {
-#   source     = "../../../modules/ansible"
-#   count      = local.monitoring_instance.enable ? 1 : 0
-#   depends_on = [module.ibmcloud_cos_download_monitoring_binaries, module.ansible_sap_install_hana, module.ansible_sap_install_solution]
+  src_script_template_name = "configure-monitoring-sap/ansible_configure_monitoring.sh.tftpl"
+  dst_script_file_name     = "${var.prefix}-configure_monitoring.sh"
 
-#   bastion_host_ip        = module.standard.access_host_or_ip
-#   ansible_host_or_ip     = module.standard.ansible_host_or_ip
-#   ssh_private_key        = var.ssh_private_key
-#   ansible_vault_password = var.ansible_vault_password
-#   configure_ansible_host = false
-#   ibmcloud_api_key       = var.ibmcloud_api_key
-
-#   src_script_template_name = "configure-monitoring-sap/ansible_configure_monitoring.sh.tftpl"
-#   dst_script_file_name     = "${var.prefix}-configure_monitoring.sh"
-
-#   src_playbook_template_name  = "configure-monitoring-sap/playbook-configure-monitoring-sap.yml.tftpl"
-#   dst_playbook_file_name      = "${var.prefix}-playbook-configure-monitoring-sap.yml"
-#   playbook_template_vars      = local.ansible_monitoring_solution_playbook_vars
-#   src_inventory_template_name = "monitoring-inventory.tftpl"
-#   dst_inventory_file_name     = "${var.prefix}-monitoring-instance-inventory"
-#   inventory_template_vars     = { "monitoring_host_ip" : local.monitoring_instance.monitoring_host_ip }
-# }
+  src_playbook_template_name  = "configure-monitoring-sap/playbook-configure-monitoring-sap.yml.tftpl"
+  dst_playbook_file_name      = "${var.prefix}-playbook-configure-monitoring-sap.yml"
+  playbook_template_vars      = local.ansible_monitoring_solution_playbook_vars
+  src_inventory_template_name = "monitoring-inventory.tftpl"
+  dst_inventory_file_name     = "${var.prefix}-monitoring-instance-inventory"
+  inventory_template_vars     = { "monitoring_host_ip" : local.monitoring_instance.monitoring_host_ip }
+}

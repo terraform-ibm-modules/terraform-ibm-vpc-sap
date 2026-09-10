@@ -183,16 +183,18 @@ variable "sap_domain" {
 variable "ibmcloud_cos_configuration" {
   description = "IBM Cloud Object Storage bucket containing SAP installation binaries. 'cos_hana_software_path' must contain only HANA DB binaries. 'cos_solution_software_path' must contain only S/4HANA or BW/4HANA binaries (no IMDB files). Avoid a leading '/' in path values. Files are downloaded to the NFS share mount path."
   type = object({
-    cos_region                 = string
-    cos_bucket_name            = string
-    cos_hana_software_path     = string
-    cos_solution_software_path = string
+    cos_region                   = string
+    cos_bucket_name              = string
+    cos_hana_software_path       = string
+    cos_solution_software_path   = string
+    cos_monitoring_software_path = string
   })
   default = {
     "cos_region" : "eu-geo",
     "cos_bucket_name" : "sap-binaries",
     "cos_hana_software_path" : "HANA_DB",
     "cos_solution_software_path" : "S4HANA_2023"
+    "cos_monitoring_software_path" : "HANA_CLIENT/x86_64"
   }
 }
 
@@ -320,23 +322,23 @@ variable "enable_monitoring" {
   type        = bool
 }
 
-# variable "sap_monitoring_vars" {
-#   description = "Configuration details for SAP monitoring dashboard. Takes effect only when a monitoring instance was deployed as part of Power Virtual Server with VPC landing zone deployment. If 'config_override' is true, an existing configuration will be overwritten, 'sap_monitoring_nr' Two-digit incremental number starting with 01 up to 99. This is not a existing SAP ID, but a pure virtual number and 'sap_monitoring_solution_name' is a virtual arbitrary short name to recognize SAP System."
-#   type = object({
-#     config_override              = bool
-#     sap_monitoring_nr            = string
-#     sap_monitoring_solution_name = string
-#   })
-#   default = {
-#     "config_override" : false,
-#     "sap_monitoring_nr" : "01",
-#     "sap_monitoring_solution_name" : ""
-#   }
-#   validation {
-#     condition     = (length(var.sap_monitoring_vars.sap_monitoring_nr) == 2 && tonumber(var.sap_monitoring_vars.sap_monitoring_nr) >= 0 && tonumber(var.sap_monitoring_vars.sap_monitoring_nr) <= 99) || var.sap_monitoring_vars.sap_monitoring_nr == ""
-#     error_message = "sap_monitoring_nr should be a 2-digit number between 00 and 99. or empty"
-#   }
-# }
+variable "sap_monitoring_vars" {
+  description = "Configuration details for SAP monitoring dashboard. Takes effect only when a monitoring instance was deployed as part of Power Virtual Server with VPC landing zone deployment. If 'config_override' is true, an existing configuration will be overwritten, 'sap_monitoring_nr' Two-digit incremental number starting with 01 up to 99. This is not a existing SAP ID, but a pure virtual number and 'sap_monitoring_solution_name' is a virtual arbitrary short name to recognize SAP System."
+  type = object({
+    config_override              = bool
+    sap_monitoring_nr            = string
+    sap_monitoring_solution_name = string
+  })
+  default = {
+    "config_override" : false,
+    "sap_monitoring_nr" : "01",
+    "sap_monitoring_solution_name" : ""
+  }
+  validation {
+    condition     = (length(var.sap_monitoring_vars.sap_monitoring_nr) == 2 && tonumber(var.sap_monitoring_vars.sap_monitoring_nr) >= 0 && tonumber(var.sap_monitoring_vars.sap_monitoring_nr) <= 99) || var.sap_monitoring_vars.sap_monitoring_nr == ""
+    error_message = "sap_monitoring_nr should be a 2-digit number between 00 and 99. or empty"
+  }
+}
 
 #################################################
 # Parameters SCC Workload Protection
