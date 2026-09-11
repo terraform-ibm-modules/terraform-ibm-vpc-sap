@@ -1,56 +1,102 @@
-// Tests in this file are run in the PR pipeline and the continuous testing pipeline
+// Tests in this file are run in the PR pipeline
 package test
 
 import (
+	"log"
+	"os"
+	"strings"
 	"testing"
 
+	"github.com/gruntwork-io/terratest/modules/ssh"
 	"github.com/stretchr/testify/assert"
+	"github.com/terraform-ibm-modules/ibmcloud-terratest-wrapper/cloudinfo"
+	"github.com/terraform-ibm-modules/ibmcloud-terratest-wrapper/common"
 	"github.com/terraform-ibm-modules/ibmcloud-terratest-wrapper/testhelper"
 )
 
 // Use existing resource group
 const resourceGroup = "geretain-test-resources"
+const defaultExampleTerraformDir = "solutions/ibm-catalog/sap-ready-to-go"
 
-// Ensure every example directory has a corresponding test
-const advancedExampleDir = "examples/advanced"
-const basicExampleDir = "examples/basic"
+// Define a struct with fields that match the structure of the YAML data
+const yamlLocation = "../common-dev-assets/common-go-assets/common-permanent-resources.yaml"
 
-func setupOptions(t *testing.T, prefix string, dir string) *testhelper.TestOptions {
-	options := testhelper.TestOptionsDefaultWithVars(&testhelper.TestOptions{
+var permanentResources map[string]interface{}
+
+var sharedInfoSvc *cloudinfo.CloudInfoService
+
+// TestMain will be run before any parallel tests, used to set up a shared InfoService object to track region usage
+// for multiple tests
+
+func TestMain(m *testing.M) {
+	var err error
+	sharedInfoSvc, err = cloudinfo.NewCloudInfoServiceFromEnv("TF_VAR_ibmcloud_api_key", cloudinfo.CloudInfoServiceOptions{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	permanentResources, err = common.LoadMapFromYaml(yamlLocation)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// creating ssh keys
+	tSsh := new(testing.T)
+	rsaKeyPair, _ := ssh.GenerateRSAKeyPairE(tSsh, 4096)
+	sshPublicKey := strings.TrimSuffix(rsaKeyPair.PublicKey, "\n") // removing trailing new lines
+	sshPrivateKey := "<<EOF\n" + rsaKeyPair.PrivateKey + "EOF"
+	if err := os.Setenv("TF_VAR_ssh_public_key", sshPublicKey); err != nil {
+		tSsh.Fatalf("failed to set TF_VAR_ssh_public_key: %v", err)
+	}
+	if err := os.Setenv("TF_VAR_ssh_private_key", sshPrivateKey); err != nil {
+		tSsh.Fatalf("failed to set TF_VAR_ssh_private_key: %v", err)
+	}
+	os.Exit(m.Run())
+}
+
+func setupOptions(t *testing.T, prefix string, powervs_zone string) *testhelper.TestOptions {
+
+	options := testhelper.TestOptionsDefault(&testhelper.TestOptions{
 		Testing:       t,
-		TerraformDir:  dir,
+		TerraformDir:  defaultExampleTerraformDir,
 		Prefix:        prefix,
 		ResourceGroup: resourceGroup,
+		Region:        powervs_zone,
+		ImplicitDestroy: []string{
+			"module.standard.module.landing_zone.module.landing_zone.ibm_resource_group.resource_groups",
+		},
 	})
+
+	options.TerraformVars = map[string]interface{}{
+
+		"prefix":                      options.Prefix,
+		"vpc_zone":                    options.Region,
+		"external_access_ip":          "0.0.0.0/0",
+		"existing_sm_instance_guid":   permanentResources["secretsManagerGuid"],
+		"existing_sm_instance_region": permanentResources["secretsManagerRegion"],
+		"enable_monitoring":           false,
+		"enable_scc_wp":               true,
+		"ansible_vault_password":      "SecurePassw0rd!",
+	}
+
 	return options
 }
 
-// Consistency test for the basic example
-func TestRunBasicExample(t *testing.T) {
+// IMPORTANT: Keep the prefix length unchanged; it appends to an auto-generated string.
+
+func TestRunBranchExample(t *testing.T) {
 	t.Parallel()
 
-	options := setupOptions(t, "mod-template-basic", basicExampleDir)
+	options := setupOptions(t, "b", "eu-de-1")
 
 	output, err := options.RunTestConsistency()
 	assert.Nil(t, err, "This should not have errored")
 	assert.NotNil(t, output, "Expected some output")
 }
 
-func TestRunAdvancedExample(t *testing.T) {
+func TestRunMainExample(t *testing.T) {
 	t.Parallel()
-
-	options := setupOptions(t, "mod-template-adv", advancedExampleDir)
-
-	output, err := options.RunTestConsistency()
-	assert.Nil(t, err, "This should not have errored")
-	assert.NotNil(t, output, "Expected some output")
-}
-
-// Upgrade test (using advanced example)
-func TestRunUpgradeExample(t *testing.T) {
-	t.Parallel()
-
-	options := setupOptions(t, "mod-template-adv-upg", advancedExampleDir)
+	options := setupOptions(t, "m", "br-sao-1")
 
 	output, err := options.RunTestUpgrade()
 	if !options.UpgradeTestSkipped {

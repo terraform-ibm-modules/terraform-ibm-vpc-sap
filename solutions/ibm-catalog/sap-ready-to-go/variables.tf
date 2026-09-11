@@ -165,114 +165,10 @@ variable "vpc_landing_zone_images" {
 # # Parameters for SAP Installation
 # #####################################################
 
-variable "sap_solution" {
-  description = "SAP Solution to be installed on VPC instances."
-  type        = string
-  validation {
-    condition     = contains(["s4hana-2023", "s4hana-2022", "s4hana-2021", "s4hana-2020", "bw4hana-2021"], var.sap_solution) ? true : false
-    error_message = "Solution value has to be one of 's4hana-2023', 's4hana-2022', 's4hana-2021', 's4hana-2020', 'bw4hana-2021'"
-  }
-}
-
 variable "sap_domain" {
   description = "SAP domain name used across HANA and NetWeaver configurations."
   type        = string
   default     = "sap.com"
-}
-
-variable "ibmcloud_cos_configuration" {
-  description = "IBM Cloud Object Storage bucket containing SAP installation binaries. 'cos_hana_software_path' must contain only HANA DB binaries. 'cos_solution_software_path' must contain only S/4HANA or BW/4HANA binaries (no IMDB files). Avoid a leading '/' in path values. Files are downloaded to the NFS share mount path."
-  type = object({
-    cos_region                   = string
-    cos_bucket_name              = string
-    cos_hana_software_path       = string
-    cos_solution_software_path   = string
-    cos_monitoring_software_path = string
-  })
-  default = {
-    "cos_region" : "eu-geo",
-    "cos_bucket_name" : "sap-binaries",
-    "cos_hana_software_path" : "HANA_DB",
-    "cos_solution_software_path" : "S4HANA_2023"
-    "cos_monitoring_software_path" : "HANA_CLIENT/x86_64"
-  }
-}
-
-variable "ibmcloud_cos_service_credentials" {
-  description = "Service credentials for the IBM Cloud Object Storage instance, as a JSON string. Must contain 'apikey' and 'resource_instance_id'. See https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-service-credentials."
-  type        = string
-  sensitive   = true
-}
-
-variable "sap_hana_master_password" {
-  description = "SAP HANA master password."
-  type        = string
-  sensitive   = true
-
-  validation {
-    condition     = length(var.sap_hana_master_password) >= 8 && length(var.sap_hana_master_password) <= 30 && can(regex("[A-Z]", var.sap_hana_master_password)) && can(regex("[a-z]", var.sap_hana_master_password)) && can(regex("[0-9]", var.sap_hana_master_password)) && !can(regex("[\\\\\"]", var.sap_hana_master_password))
-    error_message = "The SAP HANA master password must be 8-30 characters long containing at least one lower character (a-z), one upper character (A-Z) and one digit (0-9), and must not include a backslash (\\) or double quote (\")."
-  }
-}
-
-variable "sap_hana_vars" {
-  description = "SAP HANA SID and instance number."
-  type = object({
-    sap_hana_install_sid    = string
-    sap_hana_install_number = string
-  })
-  default = {
-    "sap_hana_install_sid" : "HDB",
-    "sap_hana_install_number" : "02"
-  }
-  validation {
-    condition     = can(regex("^[A-Z][A-Z0-9]{2}$", var.sap_hana_vars.sap_hana_install_sid))
-    error_message = "The provided sap_hana_vars configuration is invalid. The sap_hana_install_sid value must consist of exactly three alphanumeric characters, all uppercase, and the first character must be a letter."
-  }
-  validation {
-    condition     = can(regex("^[0-9]{2}$", var.sap_hana_vars.sap_hana_install_number))
-    error_message = "The sap_hana_install_number must be a numeric value between 00 and 99. For single-digit numbers, append a leading zero."
-  }
-  validation {
-    condition = length(distinct([
-      var.sap_hana_vars.sap_hana_install_number,
-      var.sap_solution_vars.sap_swpm_ascs_instance_nr,
-      var.sap_solution_vars.sap_swpm_pas_instance_nr
-    ])) == 3
-
-    error_message = "HANA (sap_hana_install_number), ASCS (sap_swpm_ascs_instance_nr), and PAS (sap_swpm_pas_instance_nr) instance numbers must not be the same."
-  }
-}
-
-variable "sap_swpm_master_password" {
-  description = "SAP SWPM master password."
-  type        = string
-  sensitive   = true
-  validation {
-    condition     = length(var.sap_swpm_master_password) >= 8 && length(var.sap_swpm_master_password) <= 30 && can(regex("[A-Z]", var.sap_swpm_master_password)) && can(regex("[a-z]", var.sap_swpm_master_password)) && can(regex("[0-9]", var.sap_swpm_master_password)) && !can(regex("[\\\\\"]", var.sap_swpm_master_password))
-    error_message = "The SAP Software Provisioning Manager master password must be 8-30 characters long containing at least one lower character (a-z), one upper character (A-Z) and one digit (0-9), and must not include a backslash (\\) or double quote (\")."
-  }
-}
-
-variable "sap_solution_vars" {
-  description = "SAP SID, ASCS and PAS instance numbers, and the SWPM service web methods protection list."
-  type = object({
-    sap_swpm_sid                         = string
-    sap_swpm_ascs_instance_nr            = string
-    sap_swpm_pas_instance_nr             = string
-    sap_swpm_service_protectedwebmethods = string
-
-  })
-  default = {
-    "sap_swpm_sid" : "S4H",
-    "sap_swpm_ascs_instance_nr" : "00",
-    "sap_swpm_pas_instance_nr" : "01",
-    "sap_swpm_service_protectedwebmethods" : "SDEFAULT -GetQueueStatistic -ABAPGetWPTable -EnqGetStatistic -GetProcessList -GetEnvironment -BAPGetSystemWPTable"
-  }
-  validation {
-    condition     = var.sap_solution_vars.sap_swpm_ascs_instance_nr != var.sap_solution_vars.sap_swpm_pas_instance_nr
-    error_message = "ASCS and PAS instance number must not be same"
-  }
 }
 
 # #####################################################
@@ -320,24 +216,6 @@ variable "existing_sm_instance_region" {
 variable "enable_monitoring" {
   description = "Specify whether Monitoring will be enabled. This includes the creation of an IBM Cloud Monitoring Instance and an Intel Monitoring Instance to host the services."
   type        = bool
-}
-
-variable "sap_monitoring_vars" {
-  description = "Configuration details for SAP monitoring dashboard. Takes effect only when a monitoring instance was deployed as part of Power Virtual Server with VPC landing zone deployment. If 'config_override' is true, an existing configuration will be overwritten, 'sap_monitoring_nr' Two-digit incremental number starting with 01 up to 99. This is not a existing SAP ID, but a pure virtual number and 'sap_monitoring_solution_name' is a virtual arbitrary short name to recognize SAP System."
-  type = object({
-    config_override              = bool
-    sap_monitoring_nr            = string
-    sap_monitoring_solution_name = string
-  })
-  default = {
-    "config_override" : false,
-    "sap_monitoring_nr" : "01",
-    "sap_monitoring_solution_name" : ""
-  }
-  validation {
-    condition     = (length(var.sap_monitoring_vars.sap_monitoring_nr) == 2 && tonumber(var.sap_monitoring_vars.sap_monitoring_nr) >= 0 && tonumber(var.sap_monitoring_vars.sap_monitoring_nr) <= 99) || var.sap_monitoring_vars.sap_monitoring_nr == ""
-    error_message = "sap_monitoring_nr should be a 2-digit number between 00 and 99. or empty"
-  }
 }
 
 #################################################
